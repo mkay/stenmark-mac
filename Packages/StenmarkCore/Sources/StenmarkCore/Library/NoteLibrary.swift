@@ -78,10 +78,23 @@ public enum NoteLibrary {
         return subfolders(of: folder).flatMap { [$0] + tree(under: $0, depth: depth - 1) }
     }
 
+    /// `folder` and every folder below it, for the root selector. Depth 0 is
+    /// `folder` itself.
+    public static func folderTree(under folder: URL, depth: Int = treeDepth) -> [FolderNode] {
+        func visit(_ parent: URL, level: Int) -> [FolderNode] {
+            guard level <= depth else { return [] }
+            return subfolders(of: parent).flatMap { [FolderNode(url: $0, depth: level)] + visit($0, level: level + 1) }
+        }
+        return [FolderNode(url: folder, depth: 0)] + visit(folder, level: 1)
+    }
+
     /// The note's first `# ` heading, if the note starts with one. Reads only
     /// the start of the file, because this runs for every row in a list.
     public static func title(of url: URL) -> String? {
-        guard let text = readStart(of: url, bytes: 4096) else { return nil }
+        readStart(of: url, bytes: 4096).flatMap(title(inStartOfNote:))
+    }
+
+    static func title(inStartOfNote text: String) -> String? {
         let body = Frontmatter(in: text)?.body ?? text
         for line in body.split(whereSeparator: \.isNewline) {
             let trimmed = line.trimmingCharacters(in: .whitespaces)

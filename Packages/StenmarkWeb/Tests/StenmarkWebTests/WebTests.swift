@@ -36,41 +36,29 @@ import WebKit
     #expect(WebSchemeHandler.documentPath(of: link) == "/tmp/Mein Ordner ü/Other Note.md")
 }
 
-/// Runs the real reader bundle, the same as the app's page does.
-@MainActor final class Reader {
-    let render: JSValue
-    init() throws {
-        let url = WebSchemeHandler.bundledRoot("Reader").appendingPathComponent("reader.bundle.js")
-        let context = JSContext()!
-        context.evaluateScript(try String(contentsOf: url, encoding: .utf8))
-        render = context.objectForKeyedSubscript("StenmarkReader").objectForKeyedSubscript("render")
-    }
-    func html(_ text: String, offset: Int = 0) -> String {
-        render.call(withArguments: [text, offset]).toString()
-    }
-}
+typealias Reader = MarkdownRenderer
 
 @MainActor @Test func readerKeepsLinkTargetsWithSpaces() throws {
-    let reader = try Reader()
+    let reader = Reader()
     #expect(reader.html("[a](../Some Folder/My Note.md)").contains(#"href="../Some%20Folder/My%20Note.md""#))
     #expect(reader.html(#"[a](my note.md "T")"#).contains(#"title="T""#))
     #expect(reader.html("![a](my pic.png)").contains(#"src="my%20pic.png""#))
 }
 
 @MainActor @Test func readerMatchesSmarty() throws {
-    let html = try Reader().html("../up -- a --- b ... (c)")
+    let html = Reader().html("../up -- a --- b ... (c)")
     #expect(html.contains("../up \u{2013} a \u{2014} b \u{2026} (c)"))
 }
 
 @MainActor @Test func readerTakesHeadingsWithoutASpace() throws {
-    let reader = try Reader()
+    let reader = Reader()
     #expect(reader.html("#NoSpace").contains("<h1"))
     #expect(reader.html("Para\n#Mid\nmore").contains("<h1"))
     #expect(!reader.html("#!/bin/sh").contains("<h1"))
 }
 
 @MainActor @Test func checkboxesKnowTheirOwnLine() throws {
-    let reader = try Reader()
+    let reader = Reader()
     // The fence must not throw the count off, as it does on Linux.
     let html = reader.html("```\n- [ ] not a task\n```\n\n- [ ] real\n1. [x] numbered\n")
     #expect(html.components(separatedBy: "<input").count == 3)
@@ -79,14 +67,21 @@ import WebKit
 }
 
 @MainActor @Test func sourceLinesCountFromTheTopOfTheFile() throws {
-    let html = try Reader().html("\n# Heading\n\n- [ ] x\n", offset: 4)
+    let html = Reader().html("\n# Heading\n\n- [ ] x\n", lineOffset: 4)
     #expect(html.contains(#"<h1 data-source-line="6""#))
     #expect(html.contains(#"data-task-line="8""#))
 }
 
 @MainActor @Test func attributeSyntaxFromBothDialects() throws {
-    let reader = try Reader()
+    let reader = Reader()
     #expect(reader.html("A\n{: .note }").contains(#"class="note""#))
     #expect(!reader.html("A\n{: .note }").contains(":="))
     #expect(reader.html("A\n{.note}").contains(#"class="note""#))
+}
+
+@MainActor @Test func plainTextInABlockIsntColoured() {
+    let reader = Reader()
+    #expect(!reader.html("```\n- [ ] not a task, just an example\n```\n").contains("hljs-"))
+    #expect(reader.html("```python\ndef greet(name):\n    return name\n```\n").contains("hljs-"))
+    #expect(reader.html("```\n#include <stdio.h>\nint main(void) {\n  printf(\"hi\");\n  return 0;\n}\n```\n").contains("hljs-"))
 }

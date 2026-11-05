@@ -1,51 +1,23 @@
 // SPDX-FileCopyrightText: 2026 Kreuder <mk@singular.de>
 // SPDX-License-Identifier: GPL-3.0-only
 
-import StenmarkCore
-import StenmarkWeb
 import SwiftUI
 
 @main
 struct StenmarkApp: App {
+    @State private var app = AppModel()
+
     var body: some Scene {
-        WindowGroup {
-            EditorPane()
-                .frame(minWidth: 600, minHeight: 400)
-                #if DEBUG
-                .task { await DebugHooks.run() }
-                #endif
+        WindowGroup(id: "main") {
+            MainWindow()
+                .frame(minWidth: 760, minHeight: 460)
+                .environment(app)
         }
-        .defaultSize(width: 1000, height: 700)
-    }
-}
+        .defaultSize(width: 1100, height: 720)
+        .commands { StenmarkCommands() }
 
-/// The skeleton's only view: the editor, to show the pieces are connected.
-struct EditorPane: NSViewRepresentable {
-    @MainActor final class Coordinator {
-        let editor = EditorWebView()
-    }
-
-    func makeCoordinator() -> Coordinator { Coordinator() }
-
-    func makeNSView(context: Context) -> WKWebViewHost {
-        let editor = context.coordinator.editor
-        Task {
-            await editor.load()
-            try? await editor.setContent("# Stenmark\n")
+        Settings {
+            SettingsView().environment(app)
         }
-        return WKWebViewHost(editor.webView)
     }
-
-    func updateNSView(_ view: WKWebViewHost, context: Context) {}
-}
-
-final class WKWebViewHost: NSView {
-    init(_ child: NSView) {
-        super.init(frame: .zero)
-        child.autoresizingMask = [.width, .height]
-        addSubview(child)
-    }
-
-    @available(*, unavailable)
-    required init?(coder: NSCoder) { nil }
 }

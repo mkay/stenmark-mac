@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "esbuild src/reader.js --bundle --minify --format=iife --outfile=../../Packages/StenmarkWeb/Sources/StenmarkWeb/Resources/Reader/reader.bundle.js"
+    "build": "esbuild src/reader.js --bundle --minify --format=iife --outfile=../../Packages/StenmarkWeb/Sources/StenmarkWeb/Resources/Reader/reader.bundle.js && esbuild src/page.js --bundle --minify --format=iife --outfile=../../Packages/StenmarkWeb/Sources/StenmarkWeb/Resources/Reader/page.bundle.js && mkdir -p ../../Packages/StenmarkWeb/Sources/StenmarkWeb/Resources/Reader/highlight && cd node_modules/highlight.js/styles && cp github.min.css github-dark.min.css monokai.min.css base16/solarized-light.min.css base16/solarized-dark.min.css ../../../../../Packages/StenmarkWeb/Sources/StenmarkWeb/Resources/Reader/highlight/"
   },
   "dependencies": {
     "highlight.js": "11.11.1",

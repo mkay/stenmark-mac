@@ -54,6 +54,24 @@ struct LibraryTests {
         #expect(NoteLibrary.tree(under: folder.url).count == 4)
     }
 
+    @Test func theFolderTreeStartsAtItsRootAndGoesNoHigher() throws {
+        let folder = try TemporaryFolder()
+        try folder.write("x", to: "a/b/note.md")
+        try folder.write("x", to: "c/note.md")
+        try folder.write("x", to: ".hidden/note.md")
+        let top = folder.url.appending(path: "a")
+        let tree = NoteLibrary.folderTree(under: folder.url)
+        #expect(tree.map(\.name) == [folder.url.lastPathComponent, "a", "b", "c"])
+        #expect(tree.map(\.depth) == [0, 1, 2, 1])
+        #expect(NoteLibrary.folderTree(under: top).map(\.name) == ["a", "b"])
+    }
+
+    @Test func theFolderTreeStopsAtItsDepth() throws {
+        let folder = try TemporaryFolder()
+        try folder.write("x", to: "1/2/3/4/5/a.md")
+        #expect(NoteLibrary.folderTree(under: folder.url).count == 5)
+    }
+
     @Test func aMissingFolderIsEmpty() {
         #expect(NoteLibrary.notes(in: URL(fileURLWithPath: "/nonexistent/x")).isEmpty)
     }
@@ -208,6 +226,51 @@ struct SettingsTests {
         #expect(SettingsStore(fileURL: url).value(Settings.rootDirectory) == "")
     }
 
+    private func remembered(_ stored: String, in folder: TemporaryFolder, remember: Bool = true) throws -> URL? {
+        let store = SettingsStore(fileURL: folder.url.appending(path: "settings.json"))
+        try store.set(Settings.rememberLastFolder, to: remember)
+        try store.set(Settings.lastRootFolder, to: stored)
+        return store.rememberedRoot(under: folder.url.appending(path: "Notes"))
+    }
+
+    @Test func remembersAFolderBelowTheRoot() throws {
+        let folder = try TemporaryFolder()
+        try folder.write("x", to: "Notes/a/b/n.md")
+        let target = folder.url.appending(path: "Notes/a/b")
+        #expect(try remembered(target.path, in: folder)?.path == target.path)
+    }
+
+    @Test func ignoresAFolderThatsGone() throws {
+        let folder = try TemporaryFolder()
+        try folder.write("x", to: "Notes/n.md")
+        #expect(try remembered(folder.url.appending(path: "Notes/gone").path, in: folder) == nil)
+    }
+
+    @Test("Ignores anything outside the root", arguments: ["Notes2", "Other", "", "Notes/../Other"])
+    func ignoresOutsiders(name: String) throws {
+        let folder = try TemporaryFolder()
+        for path in ["Notes/n.md", "Notes2/n.md", "Other/n.md"] { try folder.write("x", to: path) }
+        #expect(try remembered(folder.url.appending(path: name).path, in: folder) == nil)
+    }
+
+    @Test func ignoresAFile() throws {
+        let folder = try TemporaryFolder()
+        let file = try folder.write("x", to: "Notes/n.md")
+        #expect(try remembered(file.path, in: folder) == nil)
+    }
+
+    @Test func canBeTurnedOff() throws {
+        let folder = try TemporaryFolder()
+        try folder.write("x", to: "Notes/a/n.md")
+        #expect(try remembered(folder.url.appending(path: "Notes/a").path, in: folder, remember: false) == nil)
+    }
+
+    @Test func nothingStoredMeansTheRoot() throws {
+        let folder = try TemporaryFolder()
+        let store = SettingsStore(fileURL: folder.url.appending(path: "settings.json"))
+        #expect(store.rememberedRoot(under: folder.url) == nil)
+    }
+
     @Test func pinsMatchEitherUnicodeForm() throws {
         let folder = try TemporaryFolder()
         let store = SettingsStore(fileURL: folder.url.appending(path: "settings.json"))
@@ -224,5 +287,75 @@ struct SettingsTests {
         try store.set(Settings.pinnedFiles, to: [real.path, "/nonexistent.md"])
         try store.removeStalePins()
         #expect(store.value(Settings.pinnedFiles) == [real.path])
+    }
+}
+
+struct TaskListTests {
+    @Test("Finds the checkbox on each kind of line", arguments: [
+        "- [ ] a", "* [ ] a", "+ [ ] a", "1. [ ] a", "2) [ ] a", "  - [ ] nested", "> - [ ] quoted",
+    ])
+    func setsEachKind(line: String) {
+        let text = "x\n\(line)\ny\n"
+        #expect(TaskList.setting(true, onLine: 2, in: text) == text.replacingOccurrences(of: "[ ]", with: "[x]"))
+    }
+
+    @Test func clearsEitherCase() {
+        #expect(TaskList.setting(false, onLine: 1, in: "- [x] a") == "- [ ] a")
+        #expect(TaskList.setting(false, onLine: 1, in: "- [X] a") == "- [ ] a")
+    }
+
+    @Test func refusesLinesWithoutACheckbox() {
+        #expect(TaskList.setting(true, onLine: 1, in: "plain [ ] text") == nil)
+        #expect(TaskList.setting(true, onLine: 9, in: "- [ ] a") == nil)
+        #expect(TaskList.setting(true, onLine: 0, in: "- [ ] a") == nil)
+    }
+
+    @Test func changesOnlyThatOneCharacter() {
+        let text = "- [ ] a [ ] b  \n\n\t- [ ] c\n"
+        #expect(TaskList.setting(true, onLine: 1, in: text) == "- [x] a [ ] b  \n\n\t- [ ] c\n")
+    }
+
+    @Test func aStaleReaderCantTickTheWrongLine() throws {
+        let folder = try TemporaryFolder()
+        let file = try folder.write("- [ ] one\n- [ ] two\n", to: "a.md")
+        let shown = try NoteFile.load(file)
+        try folder.syncReplace(file, with: "new first line\n- [ ] one\n- [ ] two\n")
+        guard case .conflict = try NoteFile.setTask(true, onLine: 2, of: file, expecting: shown.fingerprint) else {
+            Issue.record("expected a conflict")
+            return
+        }
+        #expect(try String(contentsOf: file, encoding: .utf8) == "new first line\n- [ ] one\n- [ ] two\n")
+    }
+
+    @Test func keepsWindowsLineEndings() throws {
+        let folder = try TemporaryFolder()
+        let file = try folder.write("- [ ] a\r\n- [ ] b\r\n", to: "a.md")
+        let note = try NoteFile.load(file)
+        _ = try NoteFile.setTask(true, onLine: 2, of: file, expecting: note.fingerprint)
+        #expect(Array(try Data(contentsOf: file)) == Array("- [ ] a\r\n- [x] b\r\n".utf8))
+    }
+}
+
+struct OverviewTests {
+    @Test func countsAndGroups() throws {
+        let folder = try TemporaryFolder()
+        try folder.write("# Top\n", to: "top.md")
+        try folder.write("---\ntags: [x]\n---\n# In A\n", to: "a/one.md")
+        try folder.write("plain", to: "a/b/two.md")
+        let overview = NoteLibrary.overview(of: folder.url)
+        #expect(overview.totalNotes == 3)
+        #expect(overview.rootNotes == 1)
+        #expect(overview.folders.map(\.name) == ["a"])
+        #expect(overview.folders.first?.noteCount == 2)
+
+        let groups = NoteLibrary.allGroups(under: folder.url)
+        #expect(groups.map(\.title) == ["", "a", "a / b"])
+        #expect(groups[1].notes.first?.displayName == "In A")
+        #expect(groups[1].notes.first?.tags == ["x"])
+        #expect(groups[2].notes.first?.displayName == "two")
+
+        let one = NoteLibrary.group(for: folder.url.appending(path: "a"))
+        #expect(one.subfolders.map(\.name) == ["b"])
+        #expect(one.notes.map(\.fileName) == ["one.md"])
     }
 }

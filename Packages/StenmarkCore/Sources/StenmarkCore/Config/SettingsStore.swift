@@ -34,7 +34,8 @@ public enum Settings {
     public static let doubleClickToEdit = Setting("double_click_to_edit", true)
     public static let hideSidebarOnEdit = Setting("hide_sidebar_on_edit", true)
     public static let fileWatching = Setting("file_watching", true)
-    public static let rememberLastFolder = Setting("remember_last_folder", false)
+    // On by default here, unlike Linux.
+    public static let rememberLastFolder = Setting("remember_last_folder", true)
     public static let showSidebarTags = Setting("show_sidebar_tags", false)
     public static let previewEnabled = Setting("preview_enabled", false)
     public static let lastRootFolder = Setting("last_root_folder", "")
@@ -96,6 +97,11 @@ public final class SettingsStore: Sendable {
         state = Mutex(initial)
     }
 
+    /// Whether the file couldn't be read, so that nothing can be saved to it.
+    public var isDamaged: Bool {
+        state.withLock { $0.damage != nil }
+    }
+
     /// The setting's value. A stored value of the wrong type counts as unset.
     public func value<Value>(_ setting: Setting<Value>) -> Value {
         state.withLock { state in
@@ -121,6 +127,27 @@ public final class SettingsStore: Sendable {
         let data = try JSONSerialization.data(withJSONObject: values, options: [.prettyPrinted, .sortedKeys])
         try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         try data.write(to: url, options: .atomic)
+    }
+
+    // MARK: Root folder
+
+    /// The folder to start in: the one last selected, if that's still somewhere
+    /// the selector could go. It has to exist and be below `ceiling`, so that a
+    /// folder deleted or a root changed since doesn't leave a window stranded.
+    public func rememberedRoot(under ceiling: URL) -> URL? {
+        guard value(Settings.rememberLastFolder) else { return nil }
+        let stored = value(Settings.lastRootFolder)
+        guard !stored.isEmpty else { return nil }
+        // Standardised only for comparing, which resolves any "..". It also
+        // strips /private, so the result would no longer match the selector's
+        // paths. With the slash, or "/Notes2" would count as inside "/Notes".
+        let resolved = URL(fileURLWithPath: stored).standardizedFileURL.path
+        guard resolved.hasPrefix(ceiling.standardizedFileURL.path + "/") else { return nil }
+        var isDirectory: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: resolved, isDirectory: &isDirectory), isDirectory.boolValue else {
+            return nil
+        }
+        return URL(fileURLWithPath: stored)
     }
 
     // MARK: Pins

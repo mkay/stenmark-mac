@@ -11,6 +11,9 @@ import hljs from "highlight.js/lib/common";
 // Guessing the language of a long unlabelled block is slow, and a wrong guess
 // is worth less the longer the block is.
 const MAX_GUESS_LENGTH = 20000;
+// Below this a guess is noise: plain text in a block picks up keyword colours
+// for words like "a" and "in".
+const MIN_GUESS_RELEVANCE = 5;
 
 function highlight(code, lang) {
   try {
@@ -18,7 +21,8 @@ function highlight(code, lang) {
       return hljs.highlight(code, { language: lang, ignoreIllegals: true }).value;
     }
     if (!lang && code.length <= MAX_GUESS_LENGTH) {
-      return hljs.highlightAuto(code).value;
+      const guess = hljs.highlightAuto(code);
+      if (guess.relevance >= MIN_GUESS_RELEVANCE) return guess.value;
     }
   } catch (_error) {
     // Falls through to markdown-it's own escaping: plain text beats no text.
