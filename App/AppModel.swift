@@ -17,6 +17,9 @@ final class AppModel {
     private(set) var ceiling = ""
     /// Bumped when a setting changes that open windows have to follow.
     private(set) var styleRevision = 0
+    /// Notes and folders handed over by Finder, waiting for a window. They can
+    /// arrive during launch, before any window model exists.
+    var pendingOpens: [URL] = []
     /// Every open window, for the check on quitting.
     private var windows: [WeakWindow] = []
 

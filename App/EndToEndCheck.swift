@@ -46,6 +46,7 @@ import WebKit
         guard let root = window.root else { return }
         let welcome = root.appending(path: "Welcome.md")
         let linked = root.appending(path: "Sub Folder/Linked Note.md")
+        let original = read(welcome)
 
         check("lists load", await waitFor { window.overview.totalNotes == 4 })
         check("sidebar folders", window.overview.folders.map(\.name) == ["Sub Folder"])
@@ -104,7 +105,7 @@ import WebKit
         _ = await web.value("document.querySelector('li.task-item input').click(); 1")
         try? await Task.sleep(for: .seconds(1.5))
         check("stale tick changes nothing wrong", read(welcome) == shifted || window.message != nil)
-        window.message = nil
+        await click("OK")
         _ = await waitFor { await web.value("document.body.textContent").contains("first") }
 
         _ = await web.value("document.querySelector('a[href*=Linked]').click(); 1")
@@ -158,7 +159,169 @@ import WebKit
         check("back to light reloads", await waitFor { await web.value("getComputedStyle(document.body).backgroundColor") == "rgb(255, 255, 255)" })
 
         await editing(root: root, welcome: welcome, check: check)
+        await library(root: root, welcome: welcome, original: original, check: check)
         try? report.write(toFile: path, atomically: true, encoding: .utf8)
+    }
+
+    private func library(root: URL, welcome: URL, original: String, check: (String, Bool) -> Void) async {
+        let manager = FileManager.default
+        let plain = root.appending(path: "Plain.md")
+        let sub = root.appending(path: "Sub Folder")
+        // The editing steps typed above the frontmatter, on purpose.
+        syncWrite(original, to: welcome)
+        window.select(.all)
+        _ = await waitFor { window.documents.count == 2 && window.documents.first?.notes.contains { !$0.tags.isEmpty } == true }
+
+        // Pins.
+        window.togglePin(plain, isFolder: false)
+        check("a pinned note comes first", window.arranged(window.documents.first?.notes ?? []).first?.url.path == plain.path)
+        check("pins are saved", window.app.settings.value(Settings.pinnedFiles) == [plain.path])
+        window.togglePin(sub, isFolder: true)
+        check("folders pin too", window.isFolderPinned(sub))
+
+        // Quick filter, which also looks at tags.
+        window.quickFilter = "TOUR"
+        let filtered = window.arranged(window.documents.first?.notes ?? []).map(\.fileName)
+        check("filter matches tags \(filtered)", filtered == ["Welcome.md"])
+        window.quickFilter = ""
+
+        // Creating.
+        window.createNote(named: "Mu\u{0308}ller", in: root)
+        check("a new note opens for writing", await waitFor { window.isEditing && window.openNote?.lastPathComponent == "Müller.md" })
+        let created = window.openNote ?? plain
+        check("holds its heading", read(created) == "# Müller\n")
+        try? await Task.sleep(for: .milliseconds(300))
+        window.leaveEdit()
+        _ = await waitFor { !window.isEditing }
+        let names = (try? manager.contentsOfDirectory(atPath: root.path)) ?? []
+        check("named in composed form", names.contains { Array($0.utf8) == Array("M\u{00FC}ller.md".utf8) })
+        window.createNote(named: "../escape", in: root)
+        check("a bad name is refused", await waitFor { window.message != nil })
+        await click("OK")
+        check("and nothing escaped", !manager.fileExists(atPath: root.deletingLastPathComponent().appending(path: "escape.md").path))
+
+        // Renaming the open note, with a pin on it.
+        window.togglePin(created, isFolder: false)
+        window.rename(created, to: "Renamed")
+        let renamed = root.appending(path: "Renamed.md")
+        check("rename follows the open note", await waitFor { window.openNote?.path == renamed.path })
+        check("and keeps the extension", manager.fileExists(atPath: renamed.path))
+        check("and the pin", window.isPinned(renamed) && !window.isPinned(created))
+
+        window.rename(renamed, to: "Welcome")
+        check("a taken name is refused", await waitFor { window.message != nil })
+        await click("OK")
+        check("and overwrites nothing", read(welcome).contains("Welcome to the Demo") && manager.fileExists(atPath: renamed.path))
+
+        // Moving, and renaming the folder around the open note.
+        window.move(renamed, to: sub)
+        let moved = sub.appending(path: "Renamed.md")
+        check("move follows the open note", await waitFor { window.openNote?.path == moved.path })
+        window.select(.folder(sub))
+        _ = await waitFor { window.documents.first?.notes.contains { $0.fileName == "Renamed.md" } == true }
+        window.rename(sub, to: "Other Folder")
+        let other = root.appending(path: "Other Folder")
+        let inside = other.appending(path: "Renamed.md")
+        check("renaming a folder follows the note in it", await waitFor { window.openNote?.path == inside.path })
+        check("and the selection", window.selection == .folder(other) || { if case .folder(let url) = window.selection { url.path == other.path } else { false } }())
+        check("and the pins", window.isFolderPinned(other) && window.isPinned(inside))
+        check("the page still shows it", await waitFor {
+            ((try? await window.reader.webView.evaluateJavaScript("document.body.textContent")) as? String)?.contains("Müller") == true
+        })
+
+        // Tags.
+        window.open(welcome)
+        _ = await waitFor { window.openNote == welcome && window.openNoteTags == ["demo", "tour"] }
+        check("tags index", await waitFor { window.allTags == ["demo", "tour"] })
+        window.setTags(["demo", "tour", "2026-11-05"])
+        check("adding a tag writes it as Linux would", await waitFor { read(welcome).hasPrefix("---\ntags:\n- '2026-11-05'\n- demo\n- tour\n---\n") })
+        check("the index follows", await waitFor { window.allTags.contains("2026-11-05") })
+        check("so does the note", await waitFor { window.openNoteTags.contains("2026-11-05") })
+        window.showTags(selecting: "demo")
+        check("tag filter finds it", await waitFor { window.tagResults.map(\.fileName) == ["Welcome.md"] })
+        window.toggleTag("tour")
+        check("two tags still match", await waitFor { window.tagResults.count == 1 })
+        window.setTags(["demo", "tour"])
+        check("removing a tag works", await waitFor { !read(welcome).contains("2026-11-05") })
+        _ = await waitFor { !window.allTags.contains("2026-11-05") }
+        window.closeLists()
+        _ = await enter()
+        let beforeTags = read(welcome)
+        window.setTags(["nope"])
+        try? await Task.sleep(for: .milliseconds(400))
+        check("no tag edits while editing", read(welcome) == beforeTags)
+        window.leaveEdit()
+        _ = await waitFor { !window.isEditing }
+
+        // Search.
+        window.select(.all)
+        window.showSearch()
+        window.searchQuery = "PLANTS"
+        window.runSearch()
+        check("search finds any case", await waitFor { window.searchHits.map(\.file.lastPathComponent) == ["Welcome.md"] })
+        check("with its context", window.searchHits.first?.match == "plants" && window.searchHits.first?.before.isEmpty == false)
+        window.select(.folder(other))
+        window.runSearch()
+        check("search keeps to the folder", await waitFor { !window.isSearching })
+        check("so nothing's found there", window.searchHits.isEmpty)
+        window.closeLists()
+        window.select(.all)
+
+        // Rich text, with the clipboard put back afterwards.
+        let board = NSPasteboard.general
+        let clipboard = board.string(forType: .string)
+        window.copyAsRichText()
+        check("rich copy has HTML", board.string(forType: .html)?.contains("<h1") == true)
+        check("and the Markdown", board.string(forType: .string)?.contains("# Welcome") == true)
+        check("without frontmatter in the HTML", board.string(forType: .html)?.contains("tags:") == false)
+        board.clearContents()
+        if let clipboard { board.setString(clipboard, forType: .string) }
+
+        // PDF.
+        let pdf = root.deletingLastPathComponent().appending(path: "export.pdf")
+        await window.reader.exportPDF(to: pdf)
+        let document = CGPDFDocument(pdf as CFURL)
+        check("PDF export", (document?.numberOfPages ?? 0) >= 1)
+        check("Open With finds apps", !NSWorkspace.shared.urlsForApplications(toOpen: welcome).isEmpty)
+
+        // From Finder.
+        let outside = root.deletingLastPathComponent().appending(path: "Elsewhere/Outside.md")
+        try? manager.createDirectory(at: outside.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try? Data("# From Finder\n".utf8).write(to: outside)
+        window.handleOpen(outside)
+        check("opens a note from elsewhere", await waitFor { window.openNote?.path == outside.path })
+        try? await Task.sleep(for: .milliseconds(400))
+        syncWrite("# Changed Elsewhere\n", to: outside)
+        check("and follows changes to it", await waitFor {
+            ((try? await window.reader.webView.evaluateJavaScript("document.body.textContent")) as? String)?.contains("Changed Elsewhere") == true
+        })
+        window.handleOpen(outside.deletingLastPathComponent())
+        check("a folder outside the root is refused", await waitFor { window.message != nil } && window.root?.path == root.path)
+        await click("OK")
+        window.handleOpen(other)
+        check("a folder inside it is fine", await waitFor { window.root?.path == other.path })
+        window.switchRoot(to: root)
+        _ = await waitFor { window.root?.path == root.path }
+
+        // The Trash. One note with a name of its own, cleaned up by the script.
+        let doomed = root.appending(path: "stenmark-e2e-trash.md")
+        try? Data("x".utf8).write(to: doomed)
+        _ = await waitFor { window.overview.rootNotes > 0 }
+        window.open(doomed)
+        _ = await waitFor { window.openNote?.path == doomed.path }
+        window.trash(doomed, isFolder: false)
+        check("trashing closes the note", await waitFor { window.openNote == nil })
+        check("and it's gone from here", !manager.fileExists(atPath: doomed.path))
+        check("and from history", !window.history.contains { $0.path == doomed.path })
+        window.trash(other, isFolder: true)
+        check("a folder with notes is refused", await waitFor { window.message != nil })
+        check("and stays", manager.fileExists(atPath: other.path))
+        await click("OK")
+        let empty = root.appending(path: "stenmark-e2e-empty")
+        window.createFolder(named: "stenmark-e2e-empty", in: root)
+        _ = await waitFor { manager.fileExists(atPath: empty.path) }
+        window.trash(empty, isFolder: true)
+        check("an empty folder goes", await waitFor { !manager.fileExists(atPath: empty.path) })
     }
 
     /// Writes a note the way sync does, by renaming a new file over it.
@@ -171,6 +334,23 @@ import WebKit
     /// The key labelled Z on a German keyboard, which is where these run. Key
     /// codes are physical keys, and on QWERTY this one is Y.
     private let zKey: UInt16 = 16
+
+    /// Clicks a button in the open alert, as a person would. Clearing the state
+    /// from code instead would dismiss the alert during a SwiftUI update, which
+    /// crashes, and which no person can do.
+    private func click(_ title: String) async {
+        func button(in view: NSView) -> NSButton? {
+            if let button = view as? NSButton, button.title == title { return button }
+            return view.subviews.lazy.compactMap(button(in:)).first
+        }
+        var target: NSButton?
+        _ = await waitFor {
+            target = NSApp.windows.compactMap(\.attachedSheet).compactMap { $0.contentView.flatMap(button(in:)) }.first
+            return target != nil
+        }
+        target?.performClick(nil)
+        _ = await waitFor { NSApp.windows.allSatisfy { $0.attachedSheet == nil } }
+    }
 
     /// A real key press through NSApp, so that it meets the menu bar first.
     private func press(_ code: UInt16, _ flags: CGEventFlags = []) async {
@@ -321,11 +501,11 @@ import WebKit
         await type("discard me ")
         window.open(plain)
         check("leaving asks first", await waitFor { window.unsavedPrompt != nil })
-        window.unsavedPrompt = nil
+        await click("Cancel")
         check("Cancel stays", window.isEditing && window.openNote == welcome)
         window.open(plain)
         _ = await waitFor { window.unsavedPrompt != nil }
-        if let prompt = window.unsavedPrompt { window.answerUnsavedPrompt(prompt, save: false) }
+        await click("Don’t Save")
         check("Don't Save moves on", await waitFor { window.openNote == plain && !window.isEditing })
         try? await Task.sleep(for: .milliseconds(300))
         check("Don't Save really doesn't save", read(welcome) == saved)
@@ -337,7 +517,7 @@ import WebKit
         await type("keep me ")
         window.open(plain)
         _ = await waitFor { window.unsavedPrompt != nil }
-        if let prompt = window.unsavedPrompt { window.answerUnsavedPrompt(prompt, save: true) }
+        await click("Save")
         check("Save moves on", await waitFor { window.openNote == plain && !window.isEditing })
         check("Save saved", read(welcome).contains("keep me "))
 
@@ -348,7 +528,7 @@ import WebKit
         host?.performClose(nil)
         check("closing asks first", await waitFor { window.unsavedPrompt != nil })
         check("and the window stays", host?.isVisible == true)
-        window.unsavedPrompt = nil
+        await click("Cancel")
         try? await window.editor.setContent(window.pristineText)
         _ = await waitFor { !window.hasUnsavedChanges }
 
@@ -374,7 +554,7 @@ import WebKit
         check("and keeps the text", window.isEditing && window.editor.text.contains("cant write "))
         check("and leaves the file", read(plain) == guarded)
         try? FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: folder.path)
-        window.message = nil
+        await click("OK")
         window.leaveEdit()
         check("and works once it can", await waitFor { !window.isEditing && read(plain).contains("cant write ") })
 

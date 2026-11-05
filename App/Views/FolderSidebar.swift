@@ -20,10 +20,15 @@ struct FolderSidebar: View {
                 row("No Folder", icon: "doc.text", count: window.overview.rootNotes)
                     .tag(SidebarItem.rootNotes)
             }
-            ForEach(window.overview.folders) { folder in
-                row(verbatim: folder.name, icon: "folder", count: folder.noteCount)
+            ForEach(window.arranged(window.overview.folders)) { folder in
+                row(verbatim: folder.name, icon: window.isFolderPinned(folder.url) ? "pin" : "folder", count: folder.noteCount)
                     .tag(SidebarItem.folder(folder.url))
+                    .contextMenu { FolderMenu(window: window, url: folder.url) }
             }
+        }
+        .contextMenu {
+            Button("New Note…") { window.requestNewNote() }
+            Button("New Folder…") { window.requestNewFolder() }
         }
         // A faint accent tint, as in the Linux app and Edith.
         .scrollContentBackground(.hidden)

@@ -7,7 +7,37 @@ import SwiftUI
 /// Asks before quitting with unsaved edits.
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
-    var app: AppModel?
+    var app: AppModel? {
+        didSet {
+            app?.pendingOpens += waiting
+            waiting = []
+        }
+    }
+
+    /// What arrived before the app's model was handed over.
+    private var waiting: [URL] = []
+
+    /// Notes and folders from Finder or `open`. The Apple Event directly,
+    /// because SwiftUI's lifecycle takes it and calls neither `.onOpenURL` nor
+    /// `application(_:open:)` for a plain file.
+    func applicationWillFinishLaunching(_ notification: Notification) {
+        NSAppleEventManager.shared().setEventHandler(
+            self, andSelector: #selector(openDocuments(_:reply:)),
+            forEventClass: AEEventClass(kCoreEventClass), andEventID: AEEventID(kAEOpenDocuments))
+    }
+
+    @objc private func openDocuments(_ event: NSAppleEventDescriptor, reply: NSAppleEventDescriptor) {
+        guard let list = event.paramDescriptor(forKeyword: keyDirectObject) else { return }
+        let urls = (0..<list.numberOfItems).compactMap { index -> URL? in
+            list.atIndex(index + 1)?.coerce(toDescriptorType: typeFileURL)
+                .flatMap { URL(dataRepresentation: $0.data, relativeTo: nil) }
+        }
+        if let app {
+            app.pendingOpens += urls
+        } else {
+            waiting += urls
+        }
+    }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         let unsaved = app?.windowsWithUnsavedChanges ?? []

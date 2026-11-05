@@ -23,8 +23,6 @@ struct MainWindow: View {
 
 private struct WindowContent: View {
     @Bindable var window: WindowModel
-    @Environment(AppModel.self) private var app
-    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         Group {
@@ -48,11 +46,53 @@ private struct WindowContent: View {
         }
         .navigationTitle(window.openNote?.deletingPathExtension().lastPathComponent ?? "Stenmark")
         .focusedSceneValue(\.windowModel, window)
+        .modifier(WindowPrompts(window: window))
+        .modifier(DebugHooksModifier(window: window))
+    }
+}
+
+/// The window's observers, sheets and alerts. Apart from `WindowContent`,
+/// because together they're more than the compiler will type-check in one go.
+private struct WindowPrompts: ViewModifier {
+    @Bindable var window: WindowModel
+    @Environment(AppModel.self) private var app
+    @Environment(\.colorScheme) private var colorScheme
+
+    func body(content: Content) -> some View {
+        content
         .onChange(of: colorScheme, initial: true) { window.isDark = colorScheme == .dark }
         .onChange(of: app.ceiling) { window.adoptCeiling() }
         .onChange(of: app.styleRevision) { window.reloadOpenNote() }
         .background(CloseGuardInstaller(window: window))
+        .onChange(of: app.pendingOpens, initial: true) {
+            let urls = app.pendingOpens
+            guard !urls.isEmpty else { return }
+            app.pendingOpens = []
+            for url in urls { window.handleOpen(url) }
+        }
+        .sheet(item: $window.nameRequest) { NameSheet(request: $0) }
+        .sheet(item: $window.moveRequest) { MoveSheet(window: window, request: $0) }
+        .alert(
+            trashTitle, isPresented: trashIsPresented, presenting: window.trashRequest
+        ) { request in
+            Button(request.isFolder ? "Delete" : "Move to Trash", role: .destructive) {
+                window.trash(request.url, isFolder: request.isFolder)
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: { request in
+            Text("“\(request.url.lastPathComponent)” will be moved to the Trash.")
+        }
         .sheet(item: $window.conflict) { ConflictSheet(window: window, conflict: $0) }
+        // Never change or clear `message` from code while this is up: dismissing
+        // an alert during a SwiftUI update crashes. `WindowModel.present` holds
+        // to that, and a click on OK takes a different path.
+        .alert(
+            window.message?.title ?? "", isPresented: messageIsPresented, presenting: window.message
+        ) { _ in
+            Button("OK") {}
+        } message: { message in
+            Text(verbatim: message.text)
+        }
         .alert(
             "Save Your Changes?", isPresented: unsavedPromptIsPresented, presenting: window.unsavedPrompt
         ) { prompt in
@@ -62,16 +102,93 @@ private struct WindowContent: View {
         } message: { _ in
             Text("The note has edits that aren’t saved.")
         }
-        .alert(item: $window.message) { message in
-            Alert(title: Text(message.title), message: Text(message.text))
-        }
-        .modifier(DebugHooksModifier(window: window))
     }
 }
 
-private extension WindowContent {
+private extension WindowPrompts {
+    var messageIsPresented: Binding<Bool> {
+        Binding(get: { window.message != nil }, set: { if !$0 { window.message = nil } })
+    }
+
+    var trashTitle: LocalizedStringKey {
+        window.trashRequest?.isFolder == true ? "Delete Folder?" : "Move to Trash?"
+    }
+
+    var trashIsPresented: Binding<Bool> {
+        Binding(get: { window.trashRequest != nil }, set: { if !$0 { window.trashRequest = nil } })
+    }
+
     var unsavedPromptIsPresented: Binding<Bool> {
         Binding(get: { window.unsavedPrompt != nil }, set: { if !$0 { window.unsavedPrompt = nil } })
+    }
+}
+
+/// Asks for a name, with the part before the extension selected to type over.
+private struct NameSheet: View {
+    let request: NameRequest
+    @State private var name = ""
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(verbatim: request.title).font(.headline)
+            TextField("Name", text: $name)
+                .onSubmit(submit)
+            HStack {
+                Spacer()
+                Button("Cancel", role: .cancel) { dismiss() }
+                    .keyboardShortcut(.cancelAction)
+                Button(request.action, action: submit)
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
+        }
+        .padding(20)
+        .frame(width: 360)
+        .onAppear { name = request.initial }
+    }
+
+    private func submit() {
+        guard !name.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+        dismiss()
+        request.perform(name)
+    }
+}
+
+/// Moves a note to another folder under the root.
+private struct MoveSheet: View {
+    let window: WindowModel
+    let request: MoveRequest
+    @State private var target: URL?
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Move “\(request.note.lastPathComponent)” to:").font(.headline)
+            Picker("Folder", selection: $target) {
+                ForEach(window.rootChoices) { folder in
+                    Text(verbatim: String(repeating: "    ", count: folder.depth) + folder.name).tag(Optional(folder.url))
+                }
+            }
+            .labelsHidden()
+            HStack {
+                Spacer()
+                Button("Cancel", role: .cancel) { dismiss() }
+                    .keyboardShortcut(.cancelAction)
+                Button("Move") {
+                    dismiss()
+                    if let target { window.move(request.note, to: target) }
+                }
+                .keyboardShortcut(.defaultAction)
+                .disabled(target == nil)
+            }
+        }
+        .padding(20)
+        .frame(width: 380)
+        .onAppear {
+            let current = request.note.deletingLastPathComponent().path
+            target = window.rootChoices.first { $0.url.path == current }?.url
+        }
     }
 }
 

@@ -48,6 +48,21 @@ final class ReaderView: WKWebView {
     }
 }
 
+/// Hears when a print operation has finished. Not on the main actor, because
+/// AppKit calls this on its printing thread, and a main-actor method would stop
+/// the app there with an isolation check.
+private final class PrintCompletion: NSObject, Sendable {
+    private let done: @Sendable () -> Void
+
+    init(done: @escaping @Sendable () -> Void) {
+        self.done = done
+    }
+
+    @objc func printOperationDidRun(_ operation: NSPrintOperation, success: Bool, contextInfo: UnsafeMutableRawPointer?) {
+        done()
+    }
+}
+
 /// Shows rendered notes. Everything a note could use to leave the page goes
 /// through `decidePolicyFor`, and only a load the app started is let through.
 @MainActor
@@ -70,6 +85,7 @@ public final class ReaderWebView: NSObject, WKScriptMessageHandler, WKNavigation
         didSet { (webView as? ReaderView)?.onSideButton = onSideButton }
     }
 
+    private var printCompletion: PrintCompletion?
     private var loading: CheckedContinuation<Void, Never>?
     private var loadInProgress = false
 
@@ -117,6 +133,39 @@ public final class ReaderWebView: NSObject, WKScriptMessageHandler, WKNavigation
     /// Replaces the note in the page, keeping its scroll position.
     public func setBody(_ html: String) async {
         _ = try? await webView.evaluateJavaScript("stenmark.setBody(\(literal(html))); 0")
+    }
+
+    /// Saves the note as a paginated PDF. `createPDF` would give one long page.
+    public func exportPDF(to url: URL) async {
+        let info = NSPrintInfo()
+        info.jobDisposition = .save
+        info.dictionary()[NSPrintInfo.AttributeKey.jobSavingURL] = url
+        let operation = printOperation(info)
+        operation.showsPrintPanel = false
+        operation.showsProgressPanel = false
+        guard let window = webView.window else { return }
+        await withCheckedContinuation { continuation in
+            let delegate = PrintCompletion { continuation.resume() }
+            operation.runModal(
+                for: window, delegate: delegate,
+                didRun: #selector(PrintCompletion.printOperationDidRun(_:success:contextInfo:)), contextInfo: nil)
+            printCompletion = delegate
+        }
+        printCompletion = nil
+    }
+
+    public func printNote() {
+        guard let window = webView.window else { return }
+        printOperation(NSPrintInfo.shared).runModal(for: window, delegate: nil, didRun: nil, contextInfo: nil)
+    }
+
+    private func printOperation(_ info: NSPrintInfo) -> NSPrintOperation {
+        info.isHorizontallyCentered = false
+        info.isVerticallyCentered = false
+        let operation = webView.printOperation(with: info)
+        // Without a frame the web view prints blank pages.
+        operation.view?.frame = webView.bounds
+        return operation
     }
 
     public func topSourceLine() async -> Int {

@@ -29,6 +29,13 @@ targets:
       path: App/Info.plist
       properties:
         CFBundleDisplayName: Stenmark
+        # Alternate, so that this never takes .md files away from the default app.
+        CFBundleDocumentTypes:
+          - CFBundleTypeName: Markdown
+            CFBundleTypeRole: Editor
+            LSHandlerRank: Alternate
+            LSItemContentTypes: [net.daringfireball.markdown]
+            CFBundleTypeExtensions: [md]
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         LSApplicationCategoryType: public.app-category.productivity

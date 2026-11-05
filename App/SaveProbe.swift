@@ -53,6 +53,18 @@ import StenmarkCore
         step("tags") {
             outcome(try NoteFile.updateTags(of: file, to: ["a", "2026-11-05"]))
         }
+        step("create") { try NoteOperations.createNote(named: "Neu Mu\u{0308}ller", in: directory).lastPathComponent }
+        step("new folder") { try NoteOperations.createFolder(named: "Sub", in: directory).lastPathComponent }
+        try? await Task.sleep(for: .seconds(6))
+        step("rename") { try NoteOperations.rename(file, to: "renamed").lastPathComponent }
+        try? await Task.sleep(for: .seconds(6))
+        let renamed = directory.appending(path: "renamed.md")
+        step("move") { try NoteOperations.move(renamed, to: directory.appending(path: "Sub")).path }
+        try? await Task.sleep(for: .seconds(6))
+        step("trash") {
+            try NoteOperations.trash(directory.appending(path: "M\u{00FC}ller (Mac copy).md"))
+            return "ok"
+        }
         try? await Task.sleep(for: .seconds(6))
         try? report.write(toFile: path, atomically: true, encoding: .utf8)
     }

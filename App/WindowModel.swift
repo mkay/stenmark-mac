@@ -49,6 +49,25 @@ final class WindowModel {
     var findQuery = ""
     private(set) var findState = FindState()
 
+    // Lists: see WindowModel+Library.swift.
+    var listMode = ListMode.documents
+    var quickFilter = ""
+    var pinnedFiles: Set<String> = []
+    var pinnedFolders: Set<String> = []
+    var nameRequest: NameRequest?
+    var moveRequest: MoveRequest?
+    var trashRequest: TrashRequest?
+    var tagIndex: TagIndex?
+    var allTags: [String] = []
+    var tagCounts: [String: Int] = [:]
+    var selectedTags: Set<String> = []
+    var tagResults: [NoteSummary] = []
+    var searchQuery = ""
+    var searchHits: [SearchHit] = []
+    var isSearching = false
+    var searchTask: Task<Void, Never>?
+    var outsideWatcher: FolderWatcher?
+
     // Editing: see WindowModel+Editing.swift.
     var isEditing = false
     /// What the editor started from, and the version of the file it expects.
@@ -72,7 +91,7 @@ final class WindowModel {
     /// echo of the app's own save when the watcher fires.
     var shown: LoadedNote?
     private var watcher: FolderWatcher?
-    private var listTask: Task<Void, Never>?
+    var listTask: Task<Void, Never>?
     private var loadTask: Task<Void, Never>?
 
     #if DEBUG
@@ -105,6 +124,7 @@ final class WindowModel {
         reader.menuItems = { [weak self] in self?.readerMenuItems() ?? [] }
         reader.onEditRequest = { [weak self] line, word in self?.enterEdit(line: line, word: word) }
         configureEditing()
+        loadPins()
         app.register(self)
 
         adoptCeiling()
@@ -112,10 +132,10 @@ final class WindowModel {
             show(root: remembered)
         }
         if app.settings.isDamaged {
-            message = Message(
+            present(Message(
                 title: String(localized: "Settings Can’t Be Read"),
                 text: String(localized: "\(app.settings.fileURL.path) is damaged. Stenmark won’t change it, so settings you change now will not be saved.")
-            )
+            ))
         }
     }
 
@@ -169,6 +189,8 @@ final class WindowModel {
         watcher = FolderWatcher(folder: url) { [weak self] change in
             Task { @MainActor in self?.handle(change) }
         }
+        closeLists()
+        rebuildTags()
         refreshLists()
     }
 
@@ -224,8 +246,16 @@ final class WindowModel {
         }
     }
 
-    private func handle(_ change: FolderChange) {
+    func handle(_ change: FolderChange) {
         refreshLists()
+        if change.needsFullRescan {
+            rebuildTags()
+        } else if !change.notes.isEmpty, let tagIndex {
+            Task {
+                for path in change.notes { await tagIndex.update(URL(fileURLWithPath: path)) }
+                await refreshTags()
+            }
+        }
         guard app.settings.value(Settings.fileWatching), let openNote else { return }
         guard change.needsFullRescan || change.notes.contains(openNote.path) else { return }
         if isEditing {
@@ -319,6 +349,28 @@ final class WindowModel {
         #endif
     }
 
+    func closeOpenNote() {
+        closeNote()
+    }
+
+    func selectWithoutRefreshing(_ item: SidebarItem) {
+        selection = item
+    }
+
+    func relocateHistory(_ moved: (URL) -> URL) {
+        history = history.map(moved)
+    }
+
+    func relocateDrilledFolders(_ moved: (URL) -> URL) {
+        drilledFolders = drilledFolders.map(moved)
+    }
+
+    func forgetInHistory(_ url: URL) {
+        let current = historyIndex >= 0 && historyIndex < history.count ? history[historyIndex] : nil
+        history.removeAll { $0.path == url.path || $0.path.hasPrefix(url.path + "/") }
+        historyIndex = current.flatMap { history.firstIndex(of: $0) } ?? history.count - 1
+    }
+
     private func closeNote() {
         loadTask?.cancel()
         openNote = nil
@@ -346,10 +398,10 @@ final class WindowModel {
             if FileManager.default.fileExists(atPath: path) {
                 open(URL(fileURLWithPath: path))
             } else {
-                message = Message(
+                present(Message(
                     title: String(localized: "Note Not Found"),
                     text: String(localized: "“\((path as NSString).lastPathComponent)” doesn’t exist.")
-                )
+                ))
             }
         }
     }
@@ -364,10 +416,10 @@ final class WindowModel {
                 guard case .saved = outcome else {
                     // The note moved on since this page was rendered, so the
                     // checkbox may have meant another line. Show what's there.
-                    message = Message(
+                    present(Message(
                         title: String(localized: "The Note Has Changed"),
                         text: String(localized: "It changed since it was shown, so the checkbox wasn’t saved. Stenmark has reloaded it.")
-                    )
+                    ))
                     reloadOpenNote()
                     return
                 }
@@ -424,7 +476,14 @@ final class WindowModel {
     // MARK: Helpers
 
     func show(_ error: Error, title: String) {
-        message = Message(title: title, text: error.localizedDescription)
+        present(Message(title: title, text: error.localizedDescription))
+    }
+
+    /// Shows an alert, unless one is up already, which then stays until it's
+    /// answered. Replacing an open alert would crash: SwiftUI would dismiss it
+    /// during an update, and its closing animation re-enters that update.
+    func present(_ new: Message) {
+        if message == nil { message = new }
     }
 
     private func readerMenuItems() -> [NSMenuItem] {

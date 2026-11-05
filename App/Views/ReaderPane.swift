@@ -8,6 +8,7 @@ import WebKit
 
 struct ReaderPane: View {
     @Bindable var window: WindowModel
+    @State private var isTagsVisible = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -66,6 +67,25 @@ struct ReaderPane: View {
                 }
                 .disabled(window.openNote == nil)
                 .help("Edit the note")
+            }
+            ToolbarItemGroup(placement: .primaryAction) {
+                Button("Tags", systemImage: "tag") { isTagsVisible.toggle() }
+                    // A tag edit writes the file, and leaving edit mode would
+                    // write the editor's older text over it.
+                    .disabled(window.openNote == nil || window.isEditing)
+                    .help(window.isEditing ? "Finish editing to change tags" : "Tags")
+                    .popover(isPresented: $isTagsVisible, arrowEdge: .bottom) { TagEditor(window: window) }
+                Menu("More", systemImage: "ellipsis") {
+                    if let note = window.openNote {
+                        OpenWithMenu(window: window, url: note)
+                        Button("Show in Finder") { window.reveal(note) }
+                        Divider()
+                        Button("Copy as Rich Text") { window.copyAsRichText() }
+                        Button("Export as PDF…") { window.exportPDF() }
+                            .disabled(window.isEditing)
+                    }
+                }
+                .disabled(window.openNote == nil)
             }
             ToolbarItem(placement: .primaryAction) {
                 Button("Table of Contents", systemImage: "list.bullet.indent") { window.isContentsVisible.toggle() }
