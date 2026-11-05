@@ -108,6 +108,14 @@ signed with Sparkle's EdDSA key from the login Keychain of whoever releases, und
 account `stenmark` (`build/tools/sparkle/bin/generate_keys --account stenmark -x file`
 exports it for backup).
 
+## Credits
+
+- **derVedro**: the Russian translation, from Stenmark for Linux. Russian strings new to the
+  Mac app aren't his, and are marked for review until a native speaker has read them.
+- [CodeMirror 6](https://codemirror.net/), [markdown-it](https://github.com/markdown-it/markdown-it),
+  [highlight.js](https://highlightjs.org/), [Yams](https://github.com/jpsim/Yams) and
+  [Sparkle](https://sparkle-project.org/). [COPYRIGHT](COPYRIGHT) has the details.
+
 ## License
 
 GPL-3.0-**only**. See [LICENSE](LICENSE) and [COPYRIGHT](COPYRIGHT).
