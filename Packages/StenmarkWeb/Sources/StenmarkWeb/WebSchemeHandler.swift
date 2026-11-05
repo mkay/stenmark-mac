@@ -30,7 +30,7 @@ public final class WebSchemeHandler: NSObject, WKURLSchemeHandler {
         return url.path(percentEncoded: false)
     }
 
-    static func bundledRoot(_ name: String) -> URL {
+    nonisolated static func bundledRoot(_ name: String) -> URL {
         Bundle.module.resourceURL!.appendingPathComponent(name, isDirectory: true).standardizedFileURL
     }
 

@@ -1,11 +1,13 @@
 // SPDX-FileCopyrightText: 2026 Kreuder <mk@singular.de>
 // SPDX-License-Identifier: GPL-3.0-only
 
+import StenmarkCore
+import StenmarkWeb
 import SwiftUI
 
-/// The rest of the settings arrive in Phase 5. This one is here already because
-/// the sidebar's selector can't leave the root folder, so this is the only way
-/// to change it.
+/// The rest of the settings arrive in Phase 5. The notes folder is here already
+/// because the sidebar's selector can't leave it, so this is the only way to
+/// change it.
 struct SettingsView: View {
     @Environment(AppModel.self) private var app
     @State private var failure: String?
@@ -21,11 +23,29 @@ struct SettingsView: View {
                     Button("Choose…") { failure = app.chooseCeiling()?.localizedDescription }
                 }
             }
+            Picker("Editor theme", selection: binding(Settings.editorTheme)) {
+                ForEach(EditorTheme.all) { Text(verbatim: $0.label).tag($0.key) }
+            }
+            Toggle("Match light and dark mode", isOn: binding(Settings.editorThemeMatchSystem))
             if let failure {
                 Text(verbatim: failure).foregroundStyle(.red)
             }
         }
         .padding(20)
         .frame(width: 480)
+    }
+
+    private func binding<Value>(_ setting: Setting<Value>) -> Binding<Value> {
+        Binding(
+            get: { _ = app.styleRevision; return app.settings.value(setting) },
+            set: { value in
+                do {
+                    try app.settings.set(setting, to: value)
+                    app.styleChanged()
+                } catch {
+                    failure = error.localizedDescription
+                }
+            }
+        )
     }
 }

@@ -4,7 +4,9 @@ A native macOS Markdown reader, organiser and editor, rebuilt in Swift and Swift
 [Stenmark for Linux](https://github.com/mkay/stenmark). The editor is CodeMirror 6, hosted
 in a `WKWebView`.
 
-This is an early skeleton, not a usable app yet.
+<img src="docs/icon.png" alt="Stenmark icon" width="128">
+
+This is an early version, not a finished app yet.
 
 Both apps are meant to work on the same synced folder of notes, so the Mac app writes
 files exactly as the Linux app does.

@@ -152,3 +152,11 @@ import WebKit
         }
     }
 }
+
+extension ReaderPageTests {
+    @Test func swappingTheBodyKeepsTheCopyButtons() async {
+        let reader = await show("First\n")
+        await reader.setBody(MarkdownRenderer().html("```\ncode\n```\n"))
+        #expect(await value(reader, "document.querySelectorAll('.copy-btn').length") == "1")
+    }
+}

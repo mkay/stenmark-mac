@@ -19,24 +19,28 @@ document.addEventListener("change", (event) => {
   }));
 });
 
-for (const pre of document.querySelectorAll("pre")) {
-  const button = document.createElement("button");
-  button.className = "copy-btn";
-  button.title = root.dataset.copyLabel;
-  button.innerHTML = COPY_ICON;
-  button.addEventListener("click", () => {
-    // Exactly what the block holds. Linux drops blank lines and anything
-    // starting with #, which loses comments and #include lines.
-    post("copyCode", (pre.querySelector("code") || pre).textContent);
-    button.textContent = root.dataset.copiedLabel;
-    button.classList.add("copied");
-    setTimeout(() => {
-      button.innerHTML = COPY_ICON;
-      button.classList.remove("copied");
-    }, 1500);
-  });
-  pre.appendChild(button);
+function decorate() {
+  for (const pre of document.querySelectorAll("pre")) {
+    const button = document.createElement("button");
+    button.className = "copy-btn";
+    button.title = root.dataset.copyLabel;
+    button.innerHTML = COPY_ICON;
+    button.addEventListener("click", () => {
+      // Exactly what the block holds. Linux drops blank lines and anything
+      // starting with #, which loses comments and #include lines.
+      post("copyCode", (pre.querySelector("code") || pre).textContent);
+      button.textContent = root.dataset.copiedLabel;
+      button.classList.add("copied");
+      setTimeout(() => {
+        button.innerHTML = COPY_ICON;
+        button.classList.remove("copied");
+      }, 1500);
+    });
+    pre.appendChild(button);
+  }
 }
+
+decorate();
 
 document.addEventListener("dblclick", (event) => {
   if (root.dataset.editOnDoubleClick !== "true") return;
@@ -72,6 +76,14 @@ function highlightMatch(index) {
 }
 
 window.stenmark = {
+  // Swaps the note in place, for the live preview. Reloading the page would
+  // flash and lose the scroll position on every keystroke. Scripts in markup set
+  // this way never run, and the page's policy would stop them anyway.
+  setBody(html) {
+    document.body.innerHTML = html;
+    decorate();
+  },
+
   // The source line of the first block still visible at the top.
   topSourceLine() {
     for (const block of lineBlocks()) {

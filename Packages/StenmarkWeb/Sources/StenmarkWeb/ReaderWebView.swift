@@ -114,6 +114,11 @@ public final class ReaderWebView: NSObject, WKScriptMessageHandler, WKNavigation
         (try? JSONEncoder().encode(value)).map { String(decoding: $0, as: UTF8.self) } ?? "null"
     }
 
+    /// Replaces the note in the page, keeping its scroll position.
+    public func setBody(_ html: String) async {
+        _ = try? await webView.evaluateJavaScript("stenmark.setBody(\(literal(html))); 0")
+    }
+
     public func topSourceLine() async -> Int {
         await call("stenmark.topSourceLine()", as: Int.self) ?? 1
     }

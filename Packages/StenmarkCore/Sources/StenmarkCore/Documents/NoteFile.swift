@@ -12,6 +12,12 @@ public struct LoadedNote: Sendable, Equatable {
     public var text: String
     public var format: NoteFormat
     public var fingerprint: NoteFingerprint
+
+    public init(text: String, format: NoteFormat, fingerprint: NoteFingerprint) {
+        self.text = text
+        self.format = format
+        self.fingerprint = fingerprint
+    }
 }
 
 /// How a note's text is stored. All of it survives a save, so that opening a

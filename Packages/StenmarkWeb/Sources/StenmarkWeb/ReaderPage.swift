@@ -11,13 +11,20 @@ public struct ReaderStyle: Sendable, Equatable {
     public var theme: String
     public var isDark: Bool
     public var editOnDoubleClick: Bool
+    /// The preview beside the editor. Its checkboxes don't respond, because the
+    /// text being edited is what counts there, not the file.
+    public var isPreview: Bool
 
-    public init(fontFamily: String, fontSize: Int, theme: String, isDark: Bool, editOnDoubleClick: Bool) {
+    public init(
+        fontFamily: String, fontSize: Int, theme: String, isDark: Bool, editOnDoubleClick: Bool,
+        isPreview: Bool = false
+    ) {
         self.fontFamily = fontFamily
         self.fontSize = fontSize
         self.theme = theme
         self.isDark = isDark
         self.editOnDoubleClick = editOnDoubleClick
+        self.isPreview = isPreview
     }
 }
 
@@ -187,6 +194,7 @@ public enum ReaderPage {
             vertical-align: -0.1em;
             accent-color: \(theme.link);
         }
+        \(style.isPreview ? "input { pointer-events: none; }" : "")
         mark.sf-match { background: rgba(255, 221, 0, 0.5); color: inherit; border-radius: 2px; }
         mark.sf-current { background: rgba(255, 106, 0, 0.35); }
         """

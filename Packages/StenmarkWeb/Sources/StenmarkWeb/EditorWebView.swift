@@ -4,6 +4,46 @@
 import Foundation
 import WebKit
 
+/// How the editor looks. The names are those of the Linux settings.
+public struct EditorStyle: Sendable, Equatable {
+    public var theme: String
+    public var matchSystem: Bool
+    public var isDark: Bool
+    public var fontFamily: String
+    public var fontSize: Int
+    public var lineNumbers: Bool
+    public var lineWrap: Bool
+    public var typewriter: Bool
+
+    public init(
+        theme: String, matchSystem: Bool, isDark: Bool, fontFamily: String, fontSize: Int,
+        lineNumbers: Bool, lineWrap: Bool, typewriter: Bool
+    ) {
+        self.theme = theme
+        self.matchSystem = matchSystem
+        self.isDark = isDark
+        self.fontFamily = fontFamily
+        self.fontSize = fontSize
+        self.lineNumbers = lineNumbers
+        self.lineWrap = lineWrap
+        self.typewriter = typewriter
+    }
+}
+
+/// An entry in the editor's theme list.
+public struct EditorTheme: Decodable, Sendable, Identifiable, Hashable {
+    public let key: String
+    public let label: String
+    public var id: String { key }
+
+    /// themes.json is what the bundle builds its own list from, so this can't
+    /// offer a theme the editor lacks.
+    public static let all: [EditorTheme] = {
+        let url = WebSchemeHandler.bundledRoot("Editor").appending(path: "themes.json")
+        return (try? Data(contentsOf: url)).flatMap { try? JSONDecoder().decode([EditorTheme].self, from: $0) } ?? []
+    }()
+}
+
 /// Hosts the CodeMirror editor. `web/editor/src/editor.js` is the other half of
 /// this bridge; its handler names are the same as in the Linux app.
 @MainActor
@@ -38,6 +78,35 @@ public final class EditorWebView: NSObject, WKScriptMessageHandler, WKNavigation
     public func setContent(_ text: String) async throws {
         self.text = text
         try await call("setContent", text)
+    }
+
+    public func apply(_ style: EditorStyle) async {
+        _ = try? await call("setTheme", style.theme, style.isDark, style.matchSystem)
+        _ = try? await call("setFont", style.fontFamily, style.fontSize)
+        _ = try? await call("setLineNumbers", style.lineNumbers)
+        _ = try? await call("setLineWrap", style.lineWrap)
+        _ = try? await call("setTypewriter", style.typewriter)
+    }
+
+    /// Puts the caret on `line`, at `word` if it's there.
+    public func goTo(line: Int, word: String = "", center: Bool = true) async {
+        _ = try? await call("gotoLine", line, word, center)
+    }
+
+    public func scrollTo(line: Int) async {
+        _ = try? await call("scrollToLine", line)
+    }
+
+    /// The first line in view.
+    public func topLine() async -> Int {
+        (try? await call("topLine")) as? Int ?? 1
+    }
+
+    /// Takes keyboard focus. CodeMirror's own focus isn't enough: unless the web
+    /// view is the window's first responder, keys never reach the page.
+    public func focus() async {
+        webView.window?.makeFirstResponder(webView)
+        _ = try? await call("focusEditor")
     }
 
     /// Calls one of the editor's global functions, passing arguments as JSON

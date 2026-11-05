@@ -25,6 +25,9 @@ struct FolderSidebar: View {
                     .tag(SidebarItem.folder(folder.url))
             }
         }
+        // A faint accent tint, as in the Linux app and Edith.
+        .scrollContentBackground(.hidden)
+        .background(Color.accentColor.opacity(0.06))
         .safeAreaInset(edge: .top) {
             RootSelector(choices: window.rootChoices, current: window.root) { window.switchRoot(to: $0) }
                 .help("Change root folder")

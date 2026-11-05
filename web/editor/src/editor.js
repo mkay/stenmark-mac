@@ -8,7 +8,7 @@ import {
 import { EditorState, EditorSelection, Compartment } from "@codemirror/state";
 import { markdown } from "@codemirror/lang-markdown";
 import { languages } from "@codemirror/language-data";
-import { history, historyKeymap, defaultKeymap, indentWithTab } from "@codemirror/commands";
+import { history, undo, historyKeymap, defaultKeymap, indentWithTab } from "@codemirror/commands";
 import { search, searchKeymap, openSearchPanel, searchPanelOpen } from "@codemirror/search";
 import { syntaxHighlighting, defaultHighlightStyle } from "@codemirror/language";
 import { oneDark } from "@codemirror/theme-one-dark";
@@ -22,6 +22,7 @@ const fontCompartment        = new Compartment();
 const lineNumbersCompartment = new Compartment();
 const lineWrapCompartment    = new Compartment();
 const typewriterCompartment  = new Compartment();
+const historyCompartment     = new Compartment();
 
 // Adwaita-inspired light theme (custom, matches GTK window)
 const adwaitaLight = EditorView.theme(
@@ -268,7 +269,7 @@ const view = new EditorView({
   state: EditorState.create({
     doc: "",
     extensions: [
-      history(),
+      historyCompartment.of(history()),
       lineNumbersCompartment.of(lineNumbers()),
       highlightActiveLine(),
       drawSelection(),
@@ -340,11 +341,16 @@ const view = new EditorView({
 // --- Python-callable API ---
 
 window.setContent = (text) => {
+  // A new note starts a new undo history. Taking the history out and putting it
+  // back empties it; as an ordinary edit, this would let undo bring back the
+  // previous note's text inside this one, and saving would write that here.
+  view.dispatch({ effects: historyCompartment.reconfigure([]) });
   view.dispatch({
     changes: { from: 0, to: view.state.doc.length, insert: text },
     selection: EditorSelection.cursor(0),
     scrollIntoView: true,
   });
+  view.dispatch({ effects: historyCompartment.reconfigure(history()) });
   view.focus();
 };
 
@@ -391,6 +397,8 @@ window.setTypewriter = (on) => {
 window.toggleSearch = () => {
   openSearchPanel(view);
 };
+
+window.undoEdit = () => undo(view);
 
 window.focusEditor = () => {
   view.focus();

@@ -85,3 +85,30 @@ typealias Reader = MarkdownRenderer
     #expect(reader.html("```python\ndef greet(name):\n    return name\n```\n").contains("hljs-"))
     #expect(reader.html("```\n#include <stdio.h>\nint main(void) {\n  printf(\"hi\");\n  return 0;\n}\n```\n").contains("hljs-"))
 }
+
+/// Undo must stop at the note. Otherwise it brings back the previous note's
+/// text inside this one, and saving writes that over this note.
+@MainActor @Test func undoCantReachThePreviousNote() async throws {
+    let editor = EditorWebView()
+    await editor.load()
+    try await editor.setContent("note A\n")
+    try await editor.call("insertText", "typed in A ")
+    try await editor.setContent("note B\n")
+    try await Task.sleep(for: .milliseconds(100))
+    _ = try await editor.webView.evaluateJavaScript("window.undoEdit(); 1")
+    try await Task.sleep(for: .milliseconds(200))
+    #expect(editor.text == "note B\n")
+}
+
+/// The other half of the test above: undo still works within a note.
+@MainActor @Test func undoWorksWithinANote() async throws {
+    let editor = EditorWebView()
+    await editor.load()
+    try await editor.setContent("note\n")
+    try await editor.call("insertText", "typed ")
+    try await Task.sleep(for: .milliseconds(100))
+    #expect(editor.text == "typed note\n")
+    _ = try await editor.webView.evaluateJavaScript("window.undoEdit(); 1")
+    try await Task.sleep(for: .milliseconds(200))
+    #expect(editor.text == "note\n")
+}

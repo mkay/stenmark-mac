@@ -18,6 +18,11 @@ struct StenmarkCommands: Commands {
     @FocusedValue(\.windowModel) private var window
 
     var body: some Commands {
+        CommandGroup(replacing: .saveItem) {
+            Button("Save") { window?.saveNow() }
+                .keyboardShortcut("s")
+                .disabled(window?.isEditing != true)
+        }
         CommandGroup(after: .textEditing) {
             Divider()
             Button("Find in Note…") { window?.showFind() }
@@ -29,6 +34,20 @@ struct StenmarkCommands: Commands {
             Button("Find Previous") { window?.findNext(-1) }
                 .keyboardShortcut("g", modifiers: [.command, .shift])
                 .disabled(window?.isFindVisible != true)
+        }
+        CommandMenu("Note") {
+            Button(window?.isEditing == true ? "Done Editing" : "Edit Note") { window?.toggleEdit() }
+                .keyboardShortcut("e")
+                .disabled(window?.openNote == nil)
+            Divider()
+            Button(window?.isPreviewVisible == true ? "Hide Preview" : "Show Preview") { window?.togglePreview() }
+                .keyboardShortcut("p", modifiers: [.command, .shift])
+                .disabled(window?.isEditing != true)
+            Button(window?.isTypewriterOn == true ? "Turn Off Typewriter Mode" : "Turn On Typewriter Mode") {
+                window?.toggleTypewriter()
+            }
+            .keyboardShortcut("t", modifiers: [.command, .shift])
+            .disabled(window?.isEditing != true)
         }
         CommandMenu("Go") {
             Button("Back") { window?.goBack() }

@@ -13,6 +13,19 @@ Version 3 only, not "or any later version". Every source file carries
 `SPDX-License-Identifier: GPL-3.0-only` saying so.
 
 
+ARTWORK
+
+The application icon is original artwork, licensed separately from the code,
+under the Creative Commons Attribution 4.0 International licence (CC BY 4.0).
+See <https://creativecommons.org/licenses/by/4.0/>:
+
+  App/Assets.xcassets/AppIcon.appiconset/*
+  docs/icon.png
+
+  SPDX-License-Identifier: CC-BY-4.0
+  Copyright (C) 2026 Kreuder <mk@singular.de>
+
+
 THIRD-PARTY
 
 Not covered by the grant above. All are GPL-compatible:

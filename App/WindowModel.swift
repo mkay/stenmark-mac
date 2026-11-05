@@ -24,6 +24,8 @@ struct Message: Identifiable {
 final class WindowModel {
     let app: AppModel
     let reader = ReaderWebView()
+    let editor = EditorWebView()
+    let preview = ReaderWebView()
 
     /// The folder this window shows. It can be anywhere from `ceiling` down.
     private(set) var root: URL?
@@ -37,21 +39,38 @@ final class WindowModel {
     /// Subfolders opened from the document list, below the selected folder.
     private(set) var drilledFolders: [URL] = []
 
-    private(set) var openNote: URL?
-    private(set) var headings: [ReaderHeading] = []
-    private(set) var wordCount = 0
+    var openNote: URL?
+    var headings: [ReaderHeading] = []
+    var wordCount = 0
     private(set) var history: [URL] = []
     private(set) var historyIndex = -1
 
     var isFindVisible = false
     var findQuery = ""
     private(set) var findState = FindState()
+
+    // Editing: see WindowModel+Editing.swift.
+    var isEditing = false
+    /// What the editor started from, and the version of the file it expects.
+    var editBase: LoadedNote?
+    /// The editor's text as it stood after loading, to tell edits from none.
+    var pristineText = ""
+    var editorLoaded = false
+    /// The file changed under unsaved edits. Saving will ask what to keep.
+    var diskChangedWhileEditing = false
+    var conflict: SaveConflict?
+    var unsavedPrompt: UnsavedPrompt?
+    var previewTask: Task<Void, Never>?
+    /// The folder and document columns are out of the way for editing.
+    var hidesLists = false
+    var isPreviewVisible = false
+    var isTypewriterOn = false
     var isContentsVisible = false
     var message: Message?
 
     /// The version of the open note on the page, to tell a real change from the
     /// echo of the app's own save when the watcher fires.
-    private var shown: LoadedNote?
+    var shown: LoadedNote?
     private var watcher: FolderWatcher?
     private var listTask: Task<Void, Never>?
     private var loadTask: Task<Void, Never>?
@@ -84,6 +103,9 @@ final class WindowModel {
             if direction < 0 { self?.goBack() } else { self?.goForward() }
         }
         reader.menuItems = { [weak self] in self?.readerMenuItems() ?? [] }
+        reader.onEditRequest = { [weak self] line, word in self?.enterEdit(line: line, word: word) }
+        configureEditing()
+        app.register(self)
 
         adoptCeiling()
         if let ceiling, let remembered = app.settings.rememberedRoot(under: ceiling) {
@@ -112,8 +134,10 @@ final class WindowModel {
     }
 
     func setCeiling(_ url: URL) {
-        ceiling = url
-        show(root: url)
+        finishEditing { [weak self] in
+            self?.ceiling = url
+            self?.show(root: url)
+        }
     }
 
     /// Moves this window to a folder from the selector. It doesn't change the
@@ -121,6 +145,10 @@ final class WindowModel {
     /// not just left out of the menu. The choice is saved straight away rather
     /// than on closing, so that a crash doesn't lose it.
     func switchRoot(to url: URL) {
+        finishEditing { [weak self] in self?.applyRootSwitch(to: url) }
+    }
+
+    private func applyRootSwitch(to url: URL) {
         // By path: URL equality also depends on a trailing slash.
         guard url.path != root?.path, rootChoices.contains(where: { $0.url.path == url.path }) else { return }
         show(root: url)
@@ -200,6 +228,10 @@ final class WindowModel {
         refreshLists()
         guard app.settings.value(Settings.fileWatching), let openNote else { return }
         guard change.needsFullRescan || change.notes.contains(openNote.path) else { return }
+        if isEditing {
+            noteChangedWhileEditing()
+            return
+        }
         let fingerprint = shown?.fingerprint
         Task {
             let same = await Task.detached {
@@ -215,6 +247,10 @@ final class WindowModel {
 
     func open(_ url: URL) {
         guard url != openNote else { return }
+        finishEditing { [weak self] in self?.navigate(to: url) }
+    }
+
+    private func navigate(to url: URL) {
         history = Array(history.prefix(historyIndex + 1)) + [url]
         historyIndex = history.count - 1
         load(url, keepPosition: false)
@@ -222,18 +258,29 @@ final class WindowModel {
 
     func goBack() {
         guard canGoBack else { return }
-        historyIndex -= 1
-        load(history[historyIndex], keepPosition: false)
+        finishEditing { [weak self] in
+            guard let self else { return }
+            historyIndex -= 1
+            load(history[historyIndex], keepPosition: false)
+        }
     }
 
     func goForward() {
         guard canGoForward else { return }
-        historyIndex += 1
-        load(history[historyIndex], keepPosition: false)
+        finishEditing { [weak self] in
+            guard let self else { return }
+            historyIndex += 1
+            load(history[historyIndex], keepPosition: false)
+        }
     }
 
     func reloadOpenNote() {
-        if let openNote { load(openNote, keepPosition: true) }
+        if isEditing {
+            applyEditorStyle()
+            restylePreview()
+        } else if let openNote {
+            load(openNote, keepPosition: true)
+        }
     }
 
     private func load(_ url: URL, keepPosition: Bool) {
@@ -254,7 +301,7 @@ final class WindowModel {
         }
     }
 
-    private func display(_ note: LoadedNote, of url: URL, keepPosition: Bool) async {
+    func display(_ note: LoadedNote, of url: URL, keepPosition: Bool) async {
         let line = keepPosition ? await reader.topSourceLine() : nil
         let frontmatter = Frontmatter(in: note.text)
         let body = app.renderer.html(frontmatter?.body ?? note.text, lineOffset: frontmatter?.lineCount ?? 0)
@@ -281,7 +328,7 @@ final class WindowModel {
         closeFind()
     }
 
-    private var style: ReaderStyle {
+    var style: ReaderStyle {
         let settings = app.settings
         return ReaderStyle(
             fontFamily: settings.value(Settings.fontFamily),
@@ -292,7 +339,7 @@ final class WindowModel {
         )
     }
 
-    private func follow(_ link: URL) {
+    func follow(_ link: URL) {
         if ["http", "https", "mailto"].contains(link.scheme?.lowercased()) {
             NSWorkspace.shared.open(link)
         } else if let path = WebSchemeHandler.documentPath(of: link), path.lowercased().hasSuffix(".md") {
@@ -337,7 +384,11 @@ final class WindowModel {
     // MARK: Find and contents
 
     func showFind() {
-        isFindVisible = true
+        if isEditing {
+            Task { _ = try? await editor.call("toggleSearch") }
+        } else {
+            isFindVisible = true
+        }
     }
 
     func closeFind() {
@@ -363,12 +414,16 @@ final class WindowModel {
 
     func jump(to heading: ReaderHeading) {
         isContentsVisible = false
-        reader.scroll(toLine: heading.line)
+        if isEditing {
+            Task { await editor.scrollTo(line: heading.line) }
+        } else {
+            reader.scroll(toLine: heading.line)
+        }
     }
 
     // MARK: Helpers
 
-    private func show(_ error: Error, title: String) {
+    func show(_ error: Error, title: String) {
         message = Message(title: title, text: error.localizedDescription)
     }
 

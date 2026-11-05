@@ -5,6 +5,7 @@
 import AppKit
 import StenmarkCore
 import StenmarkWeb
+import WebKit
 
 /// Drives the real window through what the reader does, against a throwaway
 /// copy of `assets/demo/notes`, and reports each step. Nothing here is mocked:
@@ -39,6 +40,8 @@ import StenmarkWeb
         var report = ""
         func check(_ name: String, _ passed: Bool) {
             report += "\(passed ? "ok  " : "FAIL") \(name)\n"
+            // As it goes, so that a crash still shows how far it got.
+            try? report.write(toFile: path, atomically: true, encoding: .utf8)
         }
         guard let root = window.root else { return }
         let welcome = root.appending(path: "Welcome.md")
@@ -154,7 +157,270 @@ import StenmarkWeb
         window.isDark = false
         check("back to light reloads", await waitFor { await web.value("getComputedStyle(document.body).backgroundColor") == "rgb(255, 255, 255)" })
 
+        await editing(root: root, welcome: welcome, check: check)
         try? report.write(toFile: path, atomically: true, encoding: .utf8)
+    }
+
+    /// Writes a note the way sync does, by renaming a new file over it.
+    private func syncWrite(_ text: String, to url: URL) {
+        let incoming = url.deletingLastPathComponent().appending(path: ".incoming")
+        try? Data(text.utf8).write(to: incoming)
+        rename(incoming.path, url.path)
+    }
+
+    /// The key labelled Z on a German keyboard, which is where these run. Key
+    /// codes are physical keys, and on QWERTY this one is Y.
+    private let zKey: UInt16 = 16
+
+    /// A real key press through NSApp, so that it meets the menu bar first.
+    private func press(_ code: UInt16, _ flags: CGEventFlags = []) async {
+        for down in [true, false] {
+            guard let cgEvent = CGEvent(keyboardEventSource: nil, virtualKey: code, keyDown: down) else { continue }
+            cgEvent.flags = flags
+            if let event = NSEvent(cgEvent: cgEvent) { NSApp.sendEvent(event) }
+        }
+        try? await Task.sleep(for: .milliseconds(200))
+    }
+
+    private func enter() async -> Bool {
+        window.enterEdit()
+        let entered = await waitFor { window.isEditing }
+        try? await Task.sleep(for: .milliseconds(300))
+        return entered
+    }
+
+    private func type(_ text: String) async {
+        try? await window.editor.call("insertText", text)
+        _ = await waitFor { window.editor.text.contains(text) }
+    }
+
+    private func stamp(_ url: URL) -> String {
+        let attributes = try? FileManager.default.attributesOfItem(atPath: url.path)
+        return "\(attributes?[.systemFileNumber] ?? 0) \(attributes?[.modificationDate] ?? 0)"
+    }
+
+    private func editing(root: URL, welcome: URL, check: (String, Bool) -> Void) async {
+        let plain = root.appending(path: "Plain.md")
+        NSApp.activate(ignoringOtherApps: true)
+        window.open(welcome)
+        _ = await waitFor { window.openNote == welcome && !window.headings.isEmpty }
+
+        // Nothing typed: the file must not even be touched.
+        let before = stamp(welcome)
+        check("enters edit mode", await enter())
+        check("editor holds the note", window.editor.text == read(welcome))
+        let wide = await waitFor {
+            let editor = window.editor.webView
+            guard let host = editor.window else { return false }
+            return editor.frame.width > host.frame.width * 0.9
+        }
+        check("editing takes the window's width (\(Int(window.editor.webView.frame.width)) of \(Int(window.editor.webView.window?.frame.width ?? 0)))", wide)
+        window.leaveEdit()
+        check("leaves edit mode", await waitFor { !window.isEditing })
+        check("the lists come back", await waitFor { !window.hidesLists })
+        check("no edits means no write", stamp(welcome) == before)
+
+        // Saving, and the keys, through the real event path.
+        _ = await enter()
+        await window.editor.focus()
+        await type("typed ")
+        check("an edit is unsaved", window.hasUnsavedChanges)
+        await press(1, .maskCommand)
+        check("⌘S saves", await waitFor { read(welcome).contains("typed ") })
+        check("saved means clean", await waitFor { !window.hasUnsavedChanges })
+        try? await Task.sleep(for: .seconds(1.2))
+        check("own save raises no alarm", !window.diskChangedWhileEditing && window.conflict == nil)
+        await press(zKey, .maskCommand)
+        check("⌘Z undoes", await waitFor { !window.editor.text.contains("typed ") })
+        await press(zKey, [.maskCommand, .maskShift])
+        check("⇧⌘Z redoes", await waitFor { window.editor.text.contains("typed ") })
+        await press(11, .maskCommand)
+        check("⌘B formats", await waitFor { window.editor.text.contains("****") })
+        await press(zKey, .maskCommand)
+        _ = await waitFor { !window.editor.text.contains("****") }
+        // Paste and cut meet the same menu, so they get real keys too. The
+        // clipboard is put back afterwards.
+        let board = NSPasteboard.general
+        let clipboard = board.string(forType: .string)
+        board.clearContents()
+        board.setString("pasted ", forType: .string)
+        await press(9, .maskCommand)
+        check("⌘V pastes", await waitFor { window.editor.text.contains("pasted ") })
+        await press(zKey, .maskCommand)
+        check("undo takes the paste back", await waitFor { !window.editor.text.contains("pasted ") })
+        await window.editor.goTo(line: 8, center: false)
+        await press(0, .maskCommand)
+        await press(8, .maskCommand)
+        let copied = board.string(forType: .string) ?? ""
+        check("⌘A then ⌘C copies everything", copied.contains("Welcome to the Demo") && copied.contains("The End"))
+        await press(7, .maskCommand)
+        check("⌘X cuts", await waitFor { window.editor.text.isEmpty })
+        await press(zKey, .maskCommand)
+        check("undo brings it back", await waitFor { window.editor.text.contains("The End") })
+        board.clearContents()
+        if let clipboard { board.setString(clipboard, forType: .string) }
+
+        await press(3, .maskCommand)
+        check("⌘F opens the editor's search", await waitFor {
+            (try? await window.editor.webView.evaluateJavaScript("document.querySelectorAll('.cm-panel').length")) as? Int == 1
+        })
+        // Esc works outwards: the search panel, then a selection (undoing the
+        // cut left everything selected), then edit mode.
+        await press(53)
+        await window.editor.focus()
+        check("the first Esc closes search", window.isEditing)
+        await press(53)
+        check("the next clears the selection", window.isEditing)
+        await press(53)
+        check("the next leaves edit mode", await waitFor { !window.isEditing })
+
+        // Changes arriving from sync while the note is open in the editor.
+        _ = await enter()
+        syncWrite(read(welcome) + "\nFrom sync, no edits here.\n", to: welcome)
+        check("no edits: the editor follows", await waitFor { window.editor.text.contains("no edits here") })
+
+        await type("mine ")
+        let theirs = read(welcome) + "\nFrom sync, with edits here.\n"
+        syncWrite(theirs, to: welcome)
+        check("edits: a warning, not a reload", await waitFor { window.diskChangedWhileEditing })
+        check("edits survive", window.editor.text.contains("mine "))
+        window.saveNow()
+        check("saving asks", await waitFor { window.conflict != nil })
+        check("nothing was overwritten", read(welcome) == theirs)
+
+        if let conflict = window.conflict { window.resolve(conflict, with: .cancel) }
+        check("Keep Editing keeps the text", window.isEditing && window.editor.text.contains("mine ") && read(welcome) == theirs)
+        window.saveNow()
+        _ = await waitFor { window.conflict != nil }
+        if let conflict = window.conflict { window.resolve(conflict, with: .keepBoth) }
+        let copy = root.appending(path: "Welcome (Mac copy).md")
+        check("Keep Both writes a copy", await waitFor { read(copy).contains("mine ") })
+        check("and shows the other version", await waitFor { window.editor.text == theirs })
+        check("and leaves it alone", read(welcome) == theirs)
+        try? FileManager.default.removeItem(at: copy)
+
+        await type("again ")
+        syncWrite(theirs + "More.\n", to: welcome)
+        _ = await waitFor { window.diskChangedWhileEditing }
+        window.saveNow()
+        _ = await waitFor { window.conflict != nil }
+        if let conflict = window.conflict { window.resolve(conflict, with: .keepTheirs) }
+        check("Use the Other Version", await waitFor { window.editor.text == theirs + "More.\n" && !window.hasUnsavedChanges })
+
+        await type("final ")
+        syncWrite(theirs, to: welcome)
+        _ = await waitFor { window.diskChangedWhileEditing }
+        window.saveNow()
+        _ = await waitFor { window.conflict != nil }
+        if let conflict = window.conflict { window.resolve(conflict, with: .keepMine) }
+        check("Use Mine", await waitFor { read(welcome).contains("final ") })
+        check("then it's clean", await waitFor { !window.hasUnsavedChanges && !window.diskChangedWhileEditing })
+
+        // Leaving with unsaved edits.
+        let saved = read(welcome)
+        await type("discard me ")
+        window.open(plain)
+        check("leaving asks first", await waitFor { window.unsavedPrompt != nil })
+        window.unsavedPrompt = nil
+        check("Cancel stays", window.isEditing && window.openNote == welcome)
+        window.open(plain)
+        _ = await waitFor { window.unsavedPrompt != nil }
+        if let prompt = window.unsavedPrompt { window.answerUnsavedPrompt(prompt, save: false) }
+        check("Don't Save moves on", await waitFor { window.openNote == plain && !window.isEditing })
+        try? await Task.sleep(for: .milliseconds(300))
+        check("Don't Save really doesn't save", read(welcome) == saved)
+
+        window.open(welcome)
+        _ = await waitFor { window.openNote == welcome }
+        try? await Task.sleep(for: .milliseconds(300))
+        _ = await enter()
+        await type("keep me ")
+        window.open(plain)
+        _ = await waitFor { window.unsavedPrompt != nil }
+        if let prompt = window.unsavedPrompt { window.answerUnsavedPrompt(prompt, save: true) }
+        check("Save moves on", await waitFor { window.openNote == plain && !window.isEditing })
+        check("Save saved", read(welcome).contains("keep me "))
+
+        // Closing the window.
+        _ = await enter()
+        await type("close me ")
+        let host = NSApp.windows.first { $0.isVisible && $0.canBecomeMain }
+        host?.performClose(nil)
+        check("closing asks first", await waitFor { window.unsavedPrompt != nil })
+        check("and the window stays", host?.isVisible == true)
+        window.unsavedPrompt = nil
+        try? await window.editor.setContent(window.pristineText)
+        _ = await waitFor { !window.hasUnsavedChanges }
+
+        // The note going away, and a save failing.
+        await type("orphan ")
+        let keep = read(plain)
+        try? FileManager.default.removeItem(at: plain)
+        window.saveNow()
+        check("a deleted note asks", await waitFor { window.conflict != nil && window.conflict?.theirs == nil })
+        check("nothing is recreated by itself", !FileManager.default.fileExists(atPath: plain.path))
+        if let conflict = window.conflict { window.resolve(conflict, with: .keepMine) }
+        check("Save It Again recreates it", await waitFor { read(plain).contains("orphan ") })
+        try? Data(keep.utf8).write(to: plain)
+        _ = await waitFor { !window.hasUnsavedChanges }
+        try? await Task.sleep(for: .seconds(1))
+
+        let folder = plain.deletingLastPathComponent()
+        await type("cant write ")
+        let guarded = read(plain)
+        try? FileManager.default.setAttributes([.posixPermissions: 0o555], ofItemAtPath: folder.path)
+        window.saveNow()
+        check("a failed save says so", await waitFor { window.message != nil })
+        check("and keeps the text", window.isEditing && window.editor.text.contains("cant write "))
+        check("and leaves the file", read(plain) == guarded)
+        try? FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: folder.path)
+        window.message = nil
+        window.leaveEdit()
+        check("and works once it can", await waitFor { !window.isEditing && read(plain).contains("cant write ") })
+
+        // Line endings.
+        let windows = root.appending(path: "Windows.md")
+        try? Data("one\r\ntwo\r\n".utf8).write(to: windows)
+        _ = await waitFor { window.overview.totalNotes == 5 }
+        window.open(windows)
+        _ = await waitFor { window.openNote == windows }
+        try? await Task.sleep(for: .milliseconds(300))
+        _ = await enter()
+        await type("x")
+        window.leaveEdit()
+        _ = await waitFor { !window.isEditing }
+        let bytes = (try? Data(contentsOf: windows)) ?? Data()
+        check("CRLF survives an edit", bytes.count > 9 && !String(decoding: bytes, as: UTF8.self).replacingOccurrences(of: "\r\n", with: "").contains("\n"))
+
+        // The preview, and picking up in the right place.
+        window.open(welcome)
+        _ = await waitFor { window.openNote == welcome }
+        try? await Task.sleep(for: .milliseconds(300))
+        // Found, because the earlier steps moved it.
+        let line = (read(welcome).components(separatedBy: "\n").firstIndex { $0.contains("shelves") } ?? 0) + 1
+        window.enterEdit(line: line, word: "shelves")
+        _ = await waitFor { window.isEditing }
+        try? await Task.sleep(for: .milliseconds(400))
+        let active = try? await window.editor.webView.evaluateJavaScript("document.querySelector('.cm-activeLine').textContent") as? String
+        check("double click lands on its line", active?.contains("shelves") == true)
+        if !window.isPreviewVisible { window.togglePreview() }
+        _ = try? await window.preview.webView.evaluateJavaScript("window.marker = 1; 0")
+        await type("Preview me ")
+        check("preview follows typing", await waitFor {
+            ((try? await window.preview.webView.evaluateJavaScript("document.body.textContent")) as? String)?.contains("Preview me") == true
+        })
+        check("without reloading", (try? await window.preview.webView.evaluateJavaScript("window.marker")) as? Int == 1)
+        check("preview has its copy buttons", (try? await window.preview.webView.evaluateJavaScript("document.querySelectorAll('.copy-btn').length")) as? Int ?? 0 > 0)
+        await type("\n\n## Fresh Heading\n\n")
+        check("contents follow the text", await waitFor { window.headings.contains { $0.title == "Fresh Heading" } })
+        window.toggleTypewriter()
+        check("typewriter is remembered", window.app.settings.value(Settings.editorTypewriter) == window.isTypewriterOn)
+        window.toggleTypewriter()
+        window.togglePreview()
+        try? await window.editor.setContent(window.pristineText)
+        _ = await waitFor { !window.hasUnsavedChanges }
+        window.leaveEdit()
+        check("all done", await waitFor { !window.isEditing })
     }
 }
 #endif

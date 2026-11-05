@@ -15,22 +15,31 @@ struct ReaderPane: View {
                 FindBar(window: window)
                 Divider()
             }
-            WebViewHost(webView: window.reader.webView)
-                .overlay {
-                    if window.openNote == nil {
-                        // Fills the pane, because the web view behind it is white
-                        // until a note is loaded.
-                        ContentUnavailableView("Select a Note", systemImage: "doc.text")
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .background(Color(nsColor: .windowBackgroundColor))
+            if window.isEditing {
+                EditorArea(window: window)
+            } else {
+                WebViewHost(webView: window.reader.webView)
+                    .overlay {
+                        if window.openNote == nil {
+                            // Fills the pane, because the web view behind it is
+                            // white until a note is loaded.
+                            ContentUnavailableView("Select a Note", systemImage: "doc.text")
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                .background(Color(nsColor: .windowBackgroundColor))
+                        }
                     }
-                }
+            }
             if window.openNote != nil {
                 Divider()
                 HStack(spacing: 12) {
                     Text("\(window.wordCount) words")
                     Text("\(window.readingMinutes) min read")
                     Spacer()
+                    if window.isEditing {
+                        Button(window.isTypewriterOn ? "Typewriter: On" : "Typewriter: Off") { window.toggleTypewriter() }
+                            .buttonStyle(.plain)
+                            .help("Keep the current line centred")
+                    }
                 }
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -45,6 +54,19 @@ struct ReaderPane: View {
                 Button("Forward", systemImage: "chevron.right") { window.goForward() }
                     .disabled(!window.canGoForward)
             }
+            ToolbarItemGroup(placement: .primaryAction) {
+                if window.isEditing {
+                    Toggle(isOn: Binding(get: { window.isPreviewVisible }, set: { _ in window.togglePreview() })) {
+                        Label("Preview", systemImage: "rectangle.split.2x1")
+                    }
+                    .help("Toggle live preview")
+                }
+                Toggle(isOn: Binding(get: { window.isEditing }, set: { _ in window.toggleEdit() })) {
+                    Label("Edit", systemImage: "pencil")
+                }
+                .disabled(window.openNote == nil)
+                .help("Edit the note")
+            }
             ToolbarItem(placement: .primaryAction) {
                 Button("Table of Contents", systemImage: "list.bullet.indent") { window.isContentsVisible.toggle() }
                     .disabled(window.headings.isEmpty)
@@ -53,6 +75,70 @@ struct ReaderPane: View {
                     }
             }
         }
+    }
+}
+
+/// The editor, its formatting bar, and the preview beside it.
+private struct EditorArea: View {
+    let window: WindowModel
+
+    var body: some View {
+        VStack(spacing: 0) {
+            if window.diskChangedWhileEditing {
+                Label("This note changed on disk. Saving will ask which version to keep.", systemImage: "exclamationmark.triangle")
+                    .font(.callout)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(.yellow.opacity(0.2))
+            }
+            FormatBar(window: window)
+            Divider()
+            HSplitView {
+                WebViewHost(webView: window.editor.webView)
+                    .frame(minWidth: 240)
+                if window.isPreviewVisible {
+                    WebViewHost(webView: window.preview.webView)
+                        .frame(minWidth: 240)
+                }
+            }
+        }
+    }
+}
+
+private struct FormatBar: View {
+    let window: WindowModel
+
+    var body: some View {
+        HStack(spacing: 2) {
+            ForEach(1...3, id: \.self) { level in
+                Button { window.format("formatHeading", level) } label: {
+                    Text(verbatim: "H\(level)").font(.system(size: 12, weight: .semibold))
+                }
+                .help("Heading \(level)")
+            }
+            Divider().frame(height: 16).padding(.horizontal, 4)
+            tool("Bold (⌘B)", "bold", "formatBold")
+            tool("Italic (⌘I)", "italic", "formatItalic")
+            tool("Strikethrough (⇧⌘X)", "strikethrough", "formatStrike")
+            tool("Inline code (⌃`)", "chevron.left.forwardslash.chevron.right", "formatCode")
+            tool("Code block (⇧⌘K)", "curlybraces", "formatCodeBlock")
+            Divider().frame(height: 16).padding(.horizontal, 4)
+            tool("Link (⌘K)", "link", "formatLink")
+            tool("Blockquote", "text.quote", "formatQuote")
+            Divider().frame(height: 16).padding(.horizontal, 4)
+            tool("Bullet list (⇧⌘U)", "list.bullet", "formatBullet")
+            tool("Numbered list (⇧⌘O)", "list.number", "formatNumbered")
+            Spacer()
+        }
+        .buttonStyle(.borderless)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+    }
+
+    private func tool(_ title: LocalizedStringKey, _ icon: String, _ function: String) -> some View {
+        Button { window.format(function) } label: { Image(systemName: icon).frame(width: 20) }
+            .help(title)
     }
 }
 
@@ -120,16 +206,31 @@ private struct FindBar: View {
 }
 
 /// Keeps one web view alive across SwiftUI updates.
+///
+/// When the layout changes, a new host and the old one exist together for a
+/// moment, in no order to rely on. So a host takes the web view when it joins a
+/// window, and never before: taking it any earlier could leave it in a host
+/// that's on its way out, and then no key reaches the page.
 struct WebViewHost: NSViewRepresentable {
     let webView: WKWebView
 
-    func makeNSView(context: Context) -> NSView {
-        let host = NSView()
-        webView.frame = host.bounds
-        webView.autoresizingMask = [.width, .height]
-        host.addSubview(webView)
+    final class Host: NSView {
+        var webView: WKWebView?
+
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            guard window != nil, let webView else { return }
+            webView.frame = bounds
+            webView.autoresizingMask = [.width, .height]
+            addSubview(webView)
+        }
+    }
+
+    func makeNSView(context: Context) -> Host {
+        let host = Host()
+        host.webView = webView
         return host
     }
 
-    func updateNSView(_ view: NSView, context: Context) {}
+    func updateNSView(_ host: Host, context: Context) {}
 }

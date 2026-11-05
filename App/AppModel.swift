@@ -15,6 +15,26 @@ final class AppModel {
     /// sidebar's selector only offers this folder and what's below it. Empty
     /// until one is chosen.
     private(set) var ceiling = ""
+    /// Bumped when a setting changes that open windows have to follow.
+    private(set) var styleRevision = 0
+    /// Every open window, for the check on quitting.
+    private var windows: [WeakWindow] = []
+
+    private struct WeakWindow {
+        weak var model: WindowModel?
+    }
+
+    func register(_ window: WindowModel) {
+        windows = windows.filter { $0.model != nil } + [WeakWindow(model: window)]
+    }
+
+    var windowsWithUnsavedChanges: [WindowModel] {
+        windows.compactMap(\.model).filter(\.hasUnsavedChanges)
+    }
+
+    func styleChanged() {
+        styleRevision += 1
+    }
 
     init() {
         #if DEBUG

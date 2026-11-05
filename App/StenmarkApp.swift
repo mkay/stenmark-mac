@@ -5,6 +5,7 @@ import SwiftUI
 
 @main
 struct StenmarkApp: App {
+    @NSApplicationDelegateAdaptor private var delegate: AppDelegate
     @State private var app = AppModel()
 
     var body: some Scene {
@@ -12,6 +13,7 @@ struct StenmarkApp: App {
             MainWindow()
                 .frame(minWidth: 760, minHeight: 460)
                 .environment(app)
+                .task { delegate.app = app }
         }
         .defaultSize(width: 1100, height: 720)
         .commands { StenmarkCommands() }

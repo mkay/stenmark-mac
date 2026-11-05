@@ -10,6 +10,7 @@ import SwiftUI
 /// - `STENMARK_CONFIG_DIR=dir` keeps settings.json there instead.
 /// - `STENMARK_ROOT=dir` sets the root folder for this run.
 /// - `STENMARK_OPEN=a/b.md` opens that note, relative to the root.
+/// - `STENMARK_EDIT=1` opens that note in the editor, with the preview.
 /// - `STENMARK_SNAPSHOT=/path.png` saves the window after
 ///   `STENMARK_SNAPSHOT_DELAY` seconds, with a state dump beside it, then quits.
 /// - `STENMARK_E2E=/path.txt` runs `EndToEndCheck`. It changes files in the
@@ -47,6 +48,12 @@ struct DebugHooksModifier: ViewModifier {
         }
         if let note = environment["STENMARK_OPEN"], let root = window.root {
             window.open(root.appending(path: note))
+        }
+        if environment["STENMARK_EDIT"] == "1" {
+            try? await Task.sleep(for: .seconds(1))
+            window.enterEdit()
+            try? await Task.sleep(for: .seconds(1))
+            if !window.isPreviewVisible { window.togglePreview() }
         }
         if let path = environment["STENMARK_SNAPSHOT"] {
             let delay = Double(environment["STENMARK_SNAPSHOT_DELAY"] ?? "") ?? 3
