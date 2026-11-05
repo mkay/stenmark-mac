@@ -3,85 +3,58 @@
 
 #if DEBUG
 import Foundation
+import StenmarkCore
 
-/// Phase 0: how should a save work inside the Nextcloud folder? Tries each
-/// method from the signed app in a test folder and reports what happened to
-/// the file. `directory` must be a throwaway folder made for this.
+/// Runs the real save path in a real synced folder, from the signed app.
+/// `directory` must be a throwaway folder holding `probe.md` and `Müller.md`.
 @MainActor enum SaveProbe {
-    private static var report = ""
-
-    private static func say(_ line: String) {
-        report += line + "\n"
-    }
-
-    private static func describe(_ url: URL) -> String {
-        guard let values = try? FileManager.default.attributesOfItem(atPath: url.path) else { return "missing" }
-        let inode = values[.systemFileNumber] as? Int ?? -1
-        let size = values[.size] as? Int ?? -1
-        let attributes = listxattr(url.path, nil, 0, 0)
-        return "inode=\(inode) size=\(size) xattrBytes=\(attributes)"
-    }
-
-    private static func listing(_ directory: URL) -> [String] {
-        (try? FileManager.default.contentsOfDirectory(atPath: directory.path))?.sorted() ?? ["<unreadable>"]
-    }
-
-    private static func attempt(_ name: String, in directory: URL, _ write: (URL, Data) throws -> Void) {
-        let file = directory.appendingPathComponent("\(name).md")
-        let first = Data("first version\n".utf8)
-        let second = Data("second version, a little longer\n".utf8)
-        do {
-            try first.write(to: file)
-            let before = describe(file)
-            let start = Date()
-            try write(file, second)
-            let elapsed = Int(Date().timeIntervalSince(start) * 1000)
-            let matches = (try? Data(contentsOf: file)) == second
-            say("\(name): ok \(elapsed)ms content=\(matches ? "right" : "WRONG")")
-            say("  before \(before)")
-            say("  after  \(describe(file))")
-        } catch {
-            say("\(name): FAILED \(error)")
-        }
-    }
-
-    static func run(in directory: URL) async {
-        say("readable: \(listing(directory))")
-
-        attempt("in-place", in: directory) { file, data in
-            let handle = try FileHandle(forWritingTo: file)
-            try handle.truncate(atOffset: 0)
-            try handle.write(contentsOf: data)
-            try handle.close()
-        }
-        attempt("atomic", in: directory) { file, data in
-            try data.write(to: file, options: .atomic)
-        }
-        attempt("replace-item", in: directory) { file, data in
-            let scratch = try FileManager.default.url(
-                for: .itemReplacementDirectory, in: .userDomainMask, appropriateFor: file, create: true)
-            let temporary = scratch.appendingPathComponent(file.lastPathComponent)
-            try data.write(to: temporary)
-            _ = try FileManager.default.replaceItemAt(file, withItemAt: temporary)
-            try? FileManager.default.removeItem(at: scratch)
-        }
-        attempt("coordinated-atomic", in: directory) { file, data in
-            var coordinationError: NSError?
-            var writeError: Error?
-            NSFileCoordinator().coordinate(writingItemAt: file, options: .forReplacing, error: &coordinationError) { url in
-                do { try data.write(to: url, options: .atomic) } catch { writeError = error }
+    static func run(in directory: URL, reportingTo path: String) async {
+        var report = ""
+        func step(_ name: String, _ work: () throws -> String) {
+            do {
+                report += "\(name): \(try work())\n"
+            } catch {
+                report += "\(name): FAILED \(error.localizedDescription)\n"
             }
-            if let failure = coordinationError ?? writeError { throw failure }
+        }
+        func outcome(_ result: SaveOutcome) -> String {
+            switch result {
+            case .saved: "saved"
+            case .unchanged: "unchanged"
+            case .conflict: "conflict"
+            case .removed: "removed"
+            }
         }
 
-        say("after saves: \(listing(directory))")
-        for seconds in [5, 15, 30] {
-            try? await Task.sleep(for: .seconds(seconds))
-            say("+\(seconds)s: \(listing(directory))")
+        let file = directory.appending(path: "probe.md")
+        let umlaut = directory.appending(path: "M\u{00FC}ller.md")
+
+        step("edit") {
+            let note = try NoteFile.load(file)
+            return outcome(try NoteFile.save("edited\n", to: file, format: note.format, expecting: note.fingerprint))
         }
-        let out = directory.deletingLastPathComponent().appendingPathComponent("stenmark-save-probe.txt")
-        let target = ProcessInfo.processInfo.environment["STENMARK_PROBE_OUT"].map(URL.init(fileURLWithPath:)) ?? out
-        try? report.write(to: target, atomically: true, encoding: .utf8)
+        try? await Task.sleep(for: .seconds(4))
+        step("no edit") {
+            let note = try NoteFile.load(file)
+            return outcome(try NoteFile.save(note.text, to: file, format: note.format, expecting: note.fingerprint))
+        }
+        step("stale copy") {
+            let note = try NoteFile.load(file)
+            _ = try NoteFile.overwrite(file, with: "someone else\n", format: note.format)
+            return outcome(try NoteFile.save("mine\n", to: file, format: note.format, expecting: note.fingerprint))
+        }
+        step("umlaut name") {
+            let note = try NoteFile.load(umlaut)
+            return outcome(try NoteFile.save("edited\n", to: umlaut, format: note.format, expecting: note.fingerprint))
+        }
+        step("copy") {
+            try NoteFile.saveCopy(of: umlaut, text: "copy\n", format: NoteFormat()).lastPathComponent
+        }
+        step("tags") {
+            outcome(try NoteFile.updateTags(of: file, to: ["a", "2026-11-05"]))
+        }
+        try? await Task.sleep(for: .seconds(6))
+        try? report.write(toFile: path, atomically: true, encoding: .utf8)
     }
 }
 #endif

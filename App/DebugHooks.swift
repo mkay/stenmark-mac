@@ -9,7 +9,8 @@ import Foundation
 enum DebugHooks {
     @MainActor static func run() async {
         if let directory = ProcessInfo.processInfo.environment["STENMARK_SAVE_PROBE"] {
-            await SaveProbe.run(in: URL(fileURLWithPath: directory))
+            let report = ProcessInfo.processInfo.environment["STENMARK_PROBE_OUT"] ?? "/dev/null"
+            await SaveProbe.run(in: URL(fileURLWithPath: directory), reportingTo: report)
             exit(0)
         }
         if let path = ProcessInfo.processInfo.environment["STENMARK_TYPING_PROBE"] {
