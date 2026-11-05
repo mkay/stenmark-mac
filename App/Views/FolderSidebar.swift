@@ -8,6 +8,11 @@ import SwiftUI
 struct FolderSidebar: View {
     let window: WindowModel
 
+    private var showsTags: Bool {
+        _ = window.app.styleRevision
+        return window.app.settings.value(Settings.showSidebarTags)
+    }
+
     private var selection: Binding<SidebarItem?> {
         Binding(get: { window.selection }, set: { window.select($0) })
     }
@@ -24,6 +29,14 @@ struct FolderSidebar: View {
                 row(verbatim: folder.name, icon: window.isFolderPinned(folder.url) ? "pin" : "folder", count: folder.noteCount)
                     .tag(SidebarItem.folder(folder.url))
                     .contextMenu { FolderMenu(window: window, url: folder.url) }
+            }
+            if showsTags, !window.allTags.isEmpty {
+                Section("Tags") {
+                    ForEach(window.allTags, id: \.self) { tag in
+                        row(verbatim: tag, icon: "tag", count: window.tagCounts[tag] ?? 0)
+                            .tag(SidebarItem.tag(tag))
+                    }
+                }
             }
         }
         .contextMenu {

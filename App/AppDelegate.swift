@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 import AppKit
+import Sparkle
 import SwiftUI
 
 /// Asks before quitting with unsaved edits.
@@ -13,6 +14,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             waiting = []
         }
     }
+
+    /// Off in debug builds, which shouldn't replace themselves with a release.
+    #if DEBUG
+    let updater = SPUStandardUpdaterController(startingUpdater: false, updaterDelegate: nil, userDriverDelegate: nil)
+    #else
+    let updater = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
+    #endif
 
     /// What arrived before the app's model was handed over.
     private var waiting: [URL] = []

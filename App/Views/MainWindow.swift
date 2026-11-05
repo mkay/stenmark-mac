@@ -63,6 +63,11 @@ private struct WindowPrompts: ViewModifier {
         .onChange(of: colorScheme, initial: true) { window.isDark = colorScheme == .dark }
         .onChange(of: app.ceiling) { window.adoptCeiling() }
         .onChange(of: app.styleRevision) { window.reloadOpenNote() }
+        .sheet(isPresented: $window.showWhatsNew) { WhatsNewView() }
+        .sheet(isPresented: $window.showSupport) { SupportView() }
+        .task {
+            if app.shouldShowWhatsNew(version: WhatsNewView.version) { window.showWhatsNew = true }
+        }
         .background(CloseGuardInstaller(window: window))
         .onChange(of: app.pendingOpens, initial: true) {
             let urls = app.pendingOpens

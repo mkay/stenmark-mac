@@ -1,6 +1,158 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
+  "sourceLanguage": "en",
+  "strings": {
+    "Mac copy": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mac-Kopie"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "копия с Mac"
+          }
+        }
+      }
+    },
+    "The settings file %@ can't be read: %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Einstellungsdatei %1$@ kann nicht gelesen werden: %2$@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "The settings file %1$@ can't be read: %2$@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Не удаётся прочитать файл настроек %1$@: %2$@"
+          }
+        }
+      }
+    },
+    "“%@” already exists.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "„%@“ existiert bereits."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "«%@» уже существует."
+          }
+        }
+      }
+    },
+    "“%@” can't be read: %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "„%1$@“ kann nicht gelesen werden: %2$@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "“%1$@” can't be read: %2$@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Не удаётся прочитать «%1$@»: %2$@"
+          }
+        }
+      }
+    },
+    "“%@” can't be saved: %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "„%1$@“ kann nicht gespeichert werden: %2$@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "“%1$@” can't be saved: %2$@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Не удаётся сохранить «%1$@»: %2$@"
+          }
+        }
+      }
+    },
+    "“%@” can’t be used as a name.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "„%@“ kann nicht als Name verwendet werden."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "«%@» нельзя использовать как имя."
+          }
+        }
+      }
+    },
+    "“%@” still contains files or folders. Remove its contents first.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "„%@“ enthält noch Dateien oder Ordner. Entferne zuerst den Inhalt."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "«%@» всё ещё содержит файлы или папки. Сначала удалите содержимое."
+          }
+        }
+      }
+    },
+    "“%@”: %@": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "„%1$@“: %2$@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "“%1$@”: %2$@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "«%1$@»: %2$@"
+          }
+        }
+      }
+    }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }

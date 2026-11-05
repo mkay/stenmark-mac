@@ -43,5 +43,9 @@
 	<string>public.app-category.productivity</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>© 2026 Kreuder. GPL-3.0-only.</string>
+	<key>SUFeedURL</key>
+	<string>https://github.com/mkay/stenmark-mac/releases/latest/download/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>IU6jzwt76/mkcRuyen+Sd8kJ4ifQhXRoUUROLR2qZ5Y=</string>
 </dict>
 </plist>

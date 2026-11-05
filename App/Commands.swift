@@ -54,6 +54,12 @@ struct StenmarkCommands: Commands {
                 .keyboardShortcut("g", modifiers: [.command, .shift])
                 .disabled(window?.isFindVisible != true)
         }
+        CommandGroup(replacing: .help) {
+            Button("What’s New in Stenmark") { window?.showWhatsNew = true }
+                .disabled(window == nil)
+            Button("Support Stenmark…") { window?.showSupport = true }
+                .disabled(window == nil)
+        }
         CommandMenu("Note") {
             Button(window?.isEditing == true ? "Done Editing" : "Edit Note") { window?.toggleEdit() }
                 .keyboardShortcut("e")

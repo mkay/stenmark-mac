@@ -10,6 +10,7 @@ import SwiftUI
 /// - `STENMARK_CONFIG_DIR=dir` keeps settings.json there instead.
 /// - `STENMARK_ROOT=dir` sets the root folder for this run.
 /// - `STENMARK_OPEN=a/b.md` opens that note, relative to the root.
+/// - `STENMARK_SHOW_SETTINGS=1` opens the Settings window.
 /// - `STENMARK_EDIT=1` opens that note in the editor, with the preview.
 /// - `STENMARK_SNAPSHOT=/path.png` saves the window after
 ///   `STENMARK_SNAPSHOT_DELAY` seconds, with a state dump beside it, then quits.
@@ -54,6 +55,12 @@ struct DebugHooksModifier: ViewModifier {
             window.enterEdit()
             try? await Task.sleep(for: .seconds(1))
             if !window.isPreviewVisible { window.togglePreview() }
+        }
+        if environment["STENMARK_SHOW_SETTINGS"] == "1" {
+            try? await Task.sleep(for: .seconds(1))
+            // The menu item, because SwiftUI offers nothing to call from here.
+            let item = NSApp.mainMenu?.items.first?.submenu?.items.first { $0.keyEquivalent == "," }
+            if let item, let menu = item.menu { menu.performActionForItem(at: menu.index(of: item)) }
         }
         if let path = environment["STENMARK_SNAPSHOT"] {
             let delay = Double(environment["STENMARK_SNAPSHOT_DELAY"] ?? "") ?? 3

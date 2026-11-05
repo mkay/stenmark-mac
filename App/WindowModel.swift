@@ -11,6 +11,7 @@ enum SidebarItem: Hashable {
     /// Notes directly in the root.
     case rootNotes
     case folder(URL)
+    case tag(String)
 }
 
 struct Message: Identifiable {
@@ -85,6 +86,8 @@ final class WindowModel {
     var isPreviewVisible = false
     var isTypewriterOn = false
     var isContentsVisible = false
+    var showWhatsNew = false
+    var showSupport = false
     var message: Message?
 
     /// The version of the open note on the page, to tell a real change from the
@@ -197,6 +200,11 @@ final class WindowModel {
     func select(_ item: SidebarItem?) {
         guard item != selection else { return }
         selection = item
+        if case .tag(let tag) = item {
+            showTags(selecting: tag)
+            return
+        }
+        if listMode == .tags { closeLists() }
         drilledFolders = []
         refreshLists()
     }
@@ -236,7 +244,7 @@ final class WindowModel {
     nonisolated private static func listing(root: URL, selection: SidebarItem?, folder: URL?) -> [NoteGroup] {
         if let folder { return [NoteLibrary.group(for: folder)] }
         switch selection {
-        case .all, nil:
+        case .all, nil, .tag:
             return NoteLibrary.allGroups(under: root)
         case .rootNotes:
             let group = NoteLibrary.group(for: root)

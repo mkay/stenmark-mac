@@ -13,6 +13,9 @@ settings:
     MARKETING_VERSION: "0.1.0"
     CURRENT_PROJECT_VERSION: "1"
 packages:
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    exactVersion: 2.10.1
   StenmarkCore:
     path: Packages/StenmarkCore
   StenmarkWeb:
@@ -25,6 +28,7 @@ targets:
     dependencies:
       - package: StenmarkCore
       - package: StenmarkWeb
+      - package: Sparkle
     info:
       path: App/Info.plist
       properties:
@@ -39,6 +43,11 @@ targets:
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         LSApplicationCategoryType: public.app-category.productivity
+        # Sparkle: the newest release's appcast.xml, and the public half of the
+        # EdDSA key that signs updates. The private half is in the Keychain of
+        # whoever runs scripts/release.sh, under the account "stenmark".
+        SUFeedURL: https://github.com/mkay/stenmark-mac/releases/latest/download/appcast.xml
+        SUPublicEDKey: IU6jzwt76/mkcRuyen+Sd8kJ4ifQhXRoUUROLR2qZ5Y=
         NSHumanReadableCopyright: "© 2026 Kreuder. GPL-3.0-only."
     settings:
       base:

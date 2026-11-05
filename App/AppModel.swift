@@ -44,11 +44,31 @@ final class AppModel {
         if let folder = ProcessInfo.processInfo.environment["STENMARK_CONFIG_DIR"] {
             settings = SettingsStore(fileURL: URL(fileURLWithPath: folder).appending(path: "settings.json"))
             ceiling = settings.value(Settings.rootDirectory)
+            applyAppearance()
             return
         }
         #endif
         settings = SettingsStore()
         ceiling = settings.value(Settings.rootDirectory)
+        applyAppearance()
+    }
+
+    /// The App Theme setting. For the whole app, Settings window included.
+    func applyAppearance() {
+        switch settings.value(Settings.theme) {
+        case "light": NSApp?.appearance = NSAppearance(named: .aqua)
+        case "dark": NSApp?.appearance = NSAppearance(named: .darkAqua)
+        default: NSApp?.appearance = nil
+        }
+    }
+
+    /// Whether this launch is the first on a new version, recording that it was.
+    /// A fresh install has nothing new to report.
+    func shouldShowWhatsNew(version: String) -> Bool {
+        guard settings.value(Settings.whatsNewSeen) != version else { return false }
+        let isFirstRun = settings.isFirstRun
+        try? settings.set(Settings.whatsNewSeen, to: version)
+        return !isFirstRun && !WhatsNewView.notes.isEmpty
     }
 
     /// Asks for the root folder. This is the only place that offers the whole

@@ -4,6 +4,7 @@ DerivedData/
 .build/
 .swiftpm/
 *.xcodeproj/
-build/
-dist/
+# Anchored: the editor bundle lives in a folder called dist too, and is committed.
+/build/
+/dist/
 node_modules/
