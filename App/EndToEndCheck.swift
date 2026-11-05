@@ -10,6 +10,11 @@ import WebKit
 /// Drives the real window through what the reader does, against a throwaway
 /// copy of `assets/demo/notes`, and reports each step. Nothing here is mocked:
 /// clicks go to the page, and changes arrive through FSEvents.
+@MainActor enum FocusLog {
+    /// Presses that found the app in the background.
+    static var lost = 0
+}
+
 @MainActor struct EndToEndCheck {
     let window: WindowModel
 
@@ -160,6 +165,7 @@ import WebKit
 
         await editing(root: root, welcome: welcome, check: check)
         await library(root: root, welcome: welcome, original: original, check: check)
+        report += "info focus lost before \(FocusLog.lost) key presses\n"
         try? report.write(toFile: path, atomically: true, encoding: .utf8)
     }
 
@@ -303,6 +309,49 @@ import WebKit
         window.switchRoot(to: root)
         _ = await waitFor { window.root?.path == root.path }
 
+        // Layouts, measured, with real keys for the first two. 1, 2 and 3 are key
+        // codes 18, 19 and 20 on any layout.
+        window.open(welcome)
+        _ = await waitFor { window.openNote == welcome }
+        let page = window.reader.webView
+        await press(18, .maskCommand)
+        check("⌘1 shows all columns", await waitFor { window.columnLayout == .all })
+        try? await Task.sleep(for: .milliseconds(500))
+        let allWidth = page.frame.width
+        await press(19, .maskCommand)
+        check("⌘2 keeps the documents", await waitFor { window.columnLayout == .documents })
+        try? await Task.sleep(for: .milliseconds(700))
+        let documentsWidth = page.frame.width
+        check("the sidebar really goes (\(Int(allWidth)) to \(Int(documentsWidth)))", documentsWidth > allWidth + 50)
+        await press(20, .maskCommand)
+        let fullWidth = page.window?.frame.width ?? 0
+        check("⌘3 gives the note the whole width", await waitFor { page.frame.width >= (page.window?.frame.width ?? 1) - 1 })
+        check("wider than with the documents (\(Int(documentsWidth)) to \(Int(fullWidth)))", fullWidth > documentsWidth + 50)
+        check("the layout is saved", window.app.settings.value(Settings.columnLayout) == "note")
+        check("the note is still on the page", await web.value("document.querySelector('h1').textContent") == "Welcome to the Demo")
+        window.cycleLayout()
+        check("the button goes from the note to all columns", await waitFor { window.columnLayout == .all })
+        window.cycleLayout()
+        check("then to the documents and note", await waitFor { window.columnLayout == .documents })
+        window.cycleLayout()
+        check("then to the note alone", await waitFor { window.columnLayout == .note })
+        window.setLayout(.documents)
+        _ = await waitFor { !window.showsNoteOnly }
+        window.setLayout(.note)
+        window.showSearch()
+        check("search brings the documents back", await waitFor { window.columnLayout == .documents && window.listMode == .search })
+        window.closeLists()
+        window.setLayout(.note)
+        window.showTags()
+        check("so do tags", await waitFor { window.columnLayout == .documents && window.listMode == .tags })
+        window.closeLists()
+        window.setLayout(.documents)
+        _ = await enter()
+        check("editing takes the width from any layout", await waitFor { window.showsNoteOnly })
+        window.leaveEdit()
+        check("and returns to it", await waitFor { !window.isEditing && !window.showsNoteOnly && window.columnLayout == .documents })
+        window.setLayout(.all)
+
         // The Trash. One note with a name of its own, cleaned up by the script.
         let doomed = root.appending(path: "stenmark-e2e-trash.md")
         try? Data("x".utf8).write(to: doomed)
@@ -354,6 +403,15 @@ import WebKit
 
     /// A real key press through NSApp, so that it meets the menu bar first.
     private func press(_ code: UInt16, _ flags: CGEventFlags = []) async {
+        // Keys go to the key window, so someone using the Mac during a run would
+        // otherwise take them away from the test.
+        if !NSApp.isActive || NSApp.keyWindow == nil {
+            FocusLog.lost += 1
+            NSApp.activate(ignoringOtherApps: true)
+            NSApp.windows.first { $0.isVisible && $0.canBecomeMain }?.makeKeyAndOrderFront(nil)
+            _ = await waitFor(2) { NSApp.isActive && NSApp.keyWindow != nil }
+            if window.isEditing { await window.editor.focus() }
+        }
         for down in [true, false] {
             guard let cgEvent = CGEvent(keyboardEventSource: nil, virtualKey: code, keyDown: down) else { continue }
             cgEvent.flags = flags

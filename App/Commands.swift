@@ -18,6 +18,15 @@ struct StenmarkCommands: Commands {
     @FocusedValue(\.windowModel) private var window
     @Environment(\.openWindow) private var openWindow
 
+    private func layoutItem(_ title: LocalizedStringKey, _ layout: ColumnLayout, key: KeyEquivalent) -> some View {
+        Toggle(title, isOn: Binding(
+            get: { window?.columnLayout == layout },
+            set: { _ in window?.setLayout(layout) }
+        ))
+        .keyboardShortcut(key)
+        .disabled(window?.root == nil)
+    }
+
     var body: some Commands {
         CommandGroup(replacing: .newItem) {
             Button("New Note…") { window?.requestNewNote() }
@@ -53,6 +62,12 @@ struct StenmarkCommands: Commands {
             Button("Find Previous") { window?.findNext(-1) }
                 .keyboardShortcut("g", modifiers: [.command, .shift])
                 .disabled(window?.isFindVisible != true)
+        }
+        CommandGroup(after: .sidebar) {
+            Divider()
+            layoutItem("All Columns", .all, key: "1")
+            layoutItem("Documents and Note", .documents, key: "2")
+            layoutItem("Note Only", .note, key: "3")
         }
         CommandGroup(replacing: .help) {
             Button("What’s New in Stenmark") { window?.showWhatsNew = true }

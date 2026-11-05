@@ -40,6 +40,8 @@ public enum Settings {
     public static let previewEnabled = Setting("preview_enabled", false)
     public static let lastRootFolder = Setting("last_root_folder", "")
     public static let whatsNewSeen = Setting("whats_new_seen", "")
+    /// Mac only: which columns a window shows.
+    public static let columnLayout = Setting("mac_column_layout", "all")
     public static let pinnedFiles = Setting("pinned_files", [String]())
     public static let pinnedFolders = Setting("pinned_folders", [String]())
 }

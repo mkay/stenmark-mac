@@ -399,6 +399,22 @@
         }
       }
     },
+    "All Columns": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alle Spalten"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Все столбцы"
+          }
+        }
+      }
+    },
     "All Documents": {
       "localizations": {
         "de": {
@@ -587,6 +603,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Отменить"
+          }
+        }
+      }
+    },
+    "Change Layout": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ansicht wechseln"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Сменить вид"
           }
         }
       }
@@ -1055,6 +1087,22 @@
         }
       }
     },
+    "Documents and Note": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dokumente und Notiz"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Документы и заметка"
+          }
+        }
+      }
+    },
     "Done Editing": {
       "localizations": {
         "de": {
@@ -1440,11 +1488,9 @@
       }
     },
     "GitHub": {
-      "localizations": {},
       "shouldTranslate": false
     },
     "GitHub Dark": {
-      "localizations": {},
       "shouldTranslate": false
     },
     "Give it a like": {
@@ -2087,6 +2133,22 @@
         }
       }
     },
+    "Note Only": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nur Notiz"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Только заметка"
+          }
+        }
+      }
+    },
     "Notes folder": {
       "localizations": {
         "de": {
@@ -2504,7 +2566,6 @@
       }
     },
     "Sepia": {
-      "localizations": {},
       "shouldTranslate": false
     },
     "Settings Can’t Be Read": {
@@ -2588,11 +2649,9 @@
       }
     },
     "Solarized Dark": {
-      "localizations": {},
       "shouldTranslate": false
     },
     "Solarized Light": {
-      "localizations": {},
       "shouldTranslate": false
     },
     "Star it on GitHub": {

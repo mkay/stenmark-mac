@@ -32,6 +32,7 @@ extension WindowModel {
     }
 
     func configureEditing() {
+        loadLayout()
         isPreviewVisible = app.settings.value(Settings.previewEnabled)
         isTypewriterOn = app.settings.value(Settings.editorTypewriter)
         editor.onSave = { [weak self] in self?.saveNow() }

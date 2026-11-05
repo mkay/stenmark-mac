@@ -8,9 +8,11 @@ editor is CodeMirror 6, hosted in a `WKWebView`.
 
 <img src="docs/icon.png" alt="Stenmark icon" width="128">
 
-![Reading a note, with its folder and documents beside it](docs/screenshots/reader.png)
+![Reading a note, with its folders and documents beside it](docs/screenshots/reader.png)
 
-![Editing a note, with the live preview](docs/screenshots/editor.png)
+![Editing a note, with the live preview beside it](docs/screenshots/preview.png)
+
+![The editor at the window's full width](docs/screenshots/editor.png)
 
 ## Features
 

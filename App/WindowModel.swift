@@ -14,6 +14,11 @@ enum SidebarItem: Hashable {
     case tag(String)
 }
 
+/// Which columns a window shows.
+enum ColumnLayout: String {
+    case all, documents, note
+}
+
 struct Message: Identifiable {
     let id = UUID()
     let title: String
@@ -81,8 +86,12 @@ final class WindowModel {
     var conflict: SaveConflict?
     var unsavedPrompt: UnsavedPrompt?
     var previewTask: Task<Void, Never>?
-    /// The folder and document columns are out of the way for editing.
+    /// The folder and document columns are out of the way for editing, which
+    /// is separate from the layout so that leaving edit mode returns to it.
     var hidesLists = false
+    var columnLayout = ColumnLayout.all
+    /// What to come back to from the note alone.
+    var lastListLayout = ColumnLayout.all
     var isPreviewVisible = false
     var isTypewriterOn = false
     var isContentsVisible = false

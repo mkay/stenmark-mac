@@ -28,13 +28,16 @@ private struct WindowContent: View {
         Group {
             if window.root == nil {
                 WelcomeView(window: window)
-            } else if window.hidesLists {
+            } else if window.showsNoteOnly {
                 // Not a column visibility of .detailOnly, which a three-column
                 // split view on macOS ignores.
                 ReaderPane(window: window)
             } else {
-                NavigationSplitView {
+                NavigationSplitView(columnVisibility: columnVisibility) {
                     FolderSidebar(window: window)
+                        // One button steps through the layouts, in ReaderPane.
+                        // A second sidebar icon beside it looks like a mistake.
+                        .toolbar(removing: .sidebarToggle)
                         .navigationSplitViewColumnWidth(min: 170, ideal: 220)
                 } content: {
                     DocumentList(window: window)
@@ -228,6 +231,21 @@ private struct ConflictSheet: View {
         }
         .padding(20)
         .frame(width: 520)
+    }
+}
+
+private extension WindowContent {
+    /// The split view's own sidebar button comes through here too.
+    var columnVisibility: Binding<NavigationSplitViewVisibility> {
+        Binding(
+            get: { window.columnLayout == .documents ? .doubleColumn : .all },
+            set: { visibility in
+                // The split view reports once more as it's taken away for the
+                // note alone, which mustn't undo that layout.
+                guard !window.showsNoteOnly else { return }
+                window.setLayout(visibility == .all ? .all : .documents)
+            }
+        )
     }
 }
 

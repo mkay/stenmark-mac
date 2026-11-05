@@ -50,6 +50,8 @@ struct ReaderPane: View {
         }
         .toolbar {
             ToolbarItemGroup(placement: .navigation) {
+                Button("Change Layout", systemImage: "sidebar.left") { window.cycleLayout() }
+                    .help("Change Layout")
                 Button("Back", systemImage: "chevron.left") { window.goBack() }
                     .disabled(!window.canGoBack)
                 Button("Forward", systemImage: "chevron.right") { window.goForward() }
