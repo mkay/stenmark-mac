@@ -1,0 +1,808 @@
+[
+ {
+  "name": "tag 'plain'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "plain"
+  ],
+  "output": "---\ntags:\n- plain\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag 'two words'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "two words"
+  ],
+  "output": "---\ntags:\n- two words\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag 'c++'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "c++"
+  ],
+  "output": "---\ntags:\n- c++\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag 'c#'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "c#"
+  ],
+  "output": "---\ntags:\n- c#\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag 'a#b'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "a#b"
+  ],
+  "output": "---\ntags:\n- a#b\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag 'a #b'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "a #b"
+  ],
+  "output": "---\ntags:\n- 'a #b'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag 'a: b'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "a: b"
+  ],
+  "output": "---\ntags:\n- 'a: b'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag 'a:b'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "a:b"
+  ],
+  "output": "---\ntags:\n- a:b\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag 'key:'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "key:"
+  ],
+  "output": "---\ntags:\n- 'key:'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag ':colon'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   ":colon"
+  ],
+  "output": "---\ntags:\n- :colon\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag '?q'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "?q"
+  ],
+  "output": "---\ntags:\n- ?q\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag 'q?'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "q?"
+  ],
+  "output": "---\ntags:\n- q?\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag 'a,b'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "a,b"
+  ],
+  "output": "---\ntags:\n- a,b\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag ',a'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   ",a"
+  ],
+  "output": "---\ntags:\n- ',a'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag '[x]'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "[x]"
+  ],
+  "output": "---\ntags:\n- '[x]'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag 'x[1]'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "x[1]"
+  ],
+  "output": "---\ntags:\n- x[1]\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag '{x}'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "{x}"
+  ],
+  "output": "---\ntags:\n- '{x}'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag 'x{1}'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "x{1}"
+  ],
+  "output": "---\ntags:\n- x{1}\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag '*star'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "*star"
+  ],
+  "output": "---\ntags:\n- '*star'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag '&amp'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "&amp"
+  ],
+  "output": "---\ntags:\n- '&amp'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag '!bang'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "!bang"
+  ],
+  "output": "---\ntags:\n- '!bang'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag '|pipe'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "|pipe"
+  ],
+  "output": "---\ntags:\n- '|pipe'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag '>gt'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   ">gt"
+  ],
+  "output": "---\ntags:\n- '>gt'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag \"'q\"",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "'q"
+  ],
+  "output": "---\ntags:\n- '''q'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag \"q'\"",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "q'"
+  ],
+  "output": "---\ntags:\n- q'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag '\"q'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "\"q"
+  ],
+  "output": "---\ntags:\n- '\"q'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag 'q\"'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "q\""
+  ],
+  "output": "---\ntags:\n- q\"\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag \"it's\"",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "it's"
+  ],
+  "output": "---\ntags:\n- it's\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag '%p'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "%p"
+  ],
+  "output": "---\ntags:\n- '%p'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag '@a'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "@a"
+  ],
+  "output": "---\ntags:\n- '@a'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag '`b'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "`b"
+  ],
+  "output": "---\ntags:\n- '`b'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag '-x'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "-x"
+  ],
+  "output": "---\ntags:\n- -x\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag '- x'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "- x"
+  ],
+  "output": "---\ntags:\n- '- x'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag '-'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "-"
+  ],
+  "output": "---\ntags:\n- '-'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag '--'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "--"
+  ],
+  "output": "---\ntags:\n- --\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag '---'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "---"
+  ],
+  "output": "---\ntags:\n- '---'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag '---x'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "---x"
+  ],
+  "output": "---\ntags:\n- '---x'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag '...'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "..."
+  ],
+  "output": "---\ntags:\n- '...'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag '...x'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "...x"
+  ],
+  "output": "---\ntags:\n- '...x'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag '.net'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   ".net"
+  ],
+  "output": "---\ntags:\n- .net\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag '.5'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   ".5"
+  ],
+  "output": "---\ntags:\n- '.5'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag '5.'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "5."
+  ],
+  "output": "---\ntags:\n- '5.'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag '1.5'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "1.5"
+  ],
+  "output": "---\ntags:\n- '1.5'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag '1e3'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "1e3"
+  ],
+  "output": "---\ntags:\n- 1e3\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag '1.0e+3'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "1.0e+3"
+  ],
+  "output": "---\ntags:\n- '1.0e+3'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag '123'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "123"
+  ],
+  "output": "---\ntags:\n- '123'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag '0'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "0"
+  ],
+  "output": "---\ntags:\n- '0'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag '017'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "017"
+  ],
+  "output": "---\ntags:\n- '017'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag '0o17'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "0o17"
+  ],
+  "output": "---\ntags:\n- 0o17\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag '0x1f'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "0x1f"
+  ],
+  "output": "---\ntags:\n- '0x1f'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag '0b11'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "0b11"
+  ],
+  "output": "---\ntags:\n- '0b11'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag '1_000'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "1_000"
+  ],
+  "output": "---\ntags:\n- '1_000'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag '+1'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "+1"
+  ],
+  "output": "---\ntags:\n- '+1'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag '-1'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "-1"
+  ],
+  "output": "---\ntags:\n- '-1'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag '1:30'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "1:30"
+  ],
+  "output": "---\ntags:\n- '1:30'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag '.inf'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   ".inf"
+  ],
+  "output": "---\ntags:\n- '.inf'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag '.nan'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   ".nan"
+  ],
+  "output": "---\ntags:\n- '.nan'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag 'true'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "true"
+  ],
+  "output": "---\ntags:\n- 'true'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag 'True'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "True"
+  ],
+  "output": "---\ntags:\n- 'True'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag 'TRUE'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "TRUE"
+  ],
+  "output": "---\ntags:\n- 'TRUE'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag 'false'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "false"
+  ],
+  "output": "---\ntags:\n- 'false'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag 'yes'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "yes"
+  ],
+  "output": "---\ntags:\n- 'yes'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag 'no'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "no"
+  ],
+  "output": "---\ntags:\n- 'no'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag 'on'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "on"
+  ],
+  "output": "---\ntags:\n- 'on'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag 'off'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "off"
+  ],
+  "output": "---\ntags:\n- 'off'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag 'y'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "y"
+  ],
+  "output": "---\ntags:\n- y\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag 'n'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "n"
+  ],
+  "output": "---\ntags:\n- n\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag 'null'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "null"
+  ],
+  "output": "---\ntags:\n- 'null'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag 'Null'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "Null"
+  ],
+  "output": "---\ntags:\n- 'Null'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag '~'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "~"
+  ],
+  "output": "---\ntags:\n- '~'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag '<<'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "<<"
+  ],
+  "output": "---\ntags:\n- '<<'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag '='",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "="
+  ],
+  "output": "---\ntags:\n- '='\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag '2026-11-05'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "2026-11-05"
+  ],
+  "output": "---\ntags:\n- '2026-11-05'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag '2026-11-05 10:00:00'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "2026-11-05 10:00:00"
+  ],
+  "output": "---\ntags:\n- '2026-11-05 10:00:00'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag '2026-1-5'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "2026-1-5"
+  ],
+  "output": "---\ntags:\n- 2026-1-5\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag 'ümläut'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "ümläut"
+  ],
+  "output": "---\ntags:\n- ümläut\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag 'straße'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "straße"
+  ],
+  "output": "---\ntags:\n- straße\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag '日本語'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "日本語"
+  ],
+  "output": "---\ntags:\n- 日本語\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag '🎉'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "🎉"
+  ],
+  "output": "---\ntags:\n- 🎉\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag 'tab\\there'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "tab\there"
+  ],
+  "output": "---\ntags:\n- \"tab\\there\"\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag ' leading'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   " leading"
+  ],
+  "output": "---\ntags:\n- ' leading'\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag 'trailing '",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "trailing "
+  ],
+  "output": "---\ntags:\n- 'trailing '\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag 'a\\\\b'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "a\\b"
+  ],
+  "output": "---\ntags:\n- a\\b\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag '\\xa0nbsp'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   " nbsp"
+  ],
+  "output": "---\ntags:\n-  nbsp\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "tag 'é'",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "é"
+  ],
+  "output": "---\ntags:\n- é\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "several tags are sorted",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "zebra",
+   "Ähnlich",
+   "apple",
+   "Zoo"
+  ],
+  "output": "---\ntags:\n- Zoo\n- apple\n- zebra\n- Ähnlich\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "no frontmatter, no tags",
+  "input": "# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [],
+  "output": "# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "replace",
+  "input": "---\ntags:\n- a\n---\n# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "b",
+   "c"
+  ],
+  "output": "---\ntags:\n- b\n- c\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "remove the only key",
+  "input": "---\ntags:\n- a\n---\n# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [],
+  "output": "# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "key sorted before",
+  "input": "---\nalpha: 1\n---\n# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "t"
+  ],
+  "output": "---\nalpha: 1\ntags:\n- t\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "key sorted after",
+  "input": "---\nzeta: 1\n---\n# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "t"
+  ],
+  "output": "---\ntags:\n- t\nzeta: 1\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "keys on both sides",
+  "input": "---\nalpha: x\nzeta: 1\n---\n# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "t"
+  ],
+  "output": "---\nalpha: x\ntags:\n- t\nzeta: 1\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "replace between keys",
+  "input": "---\nalpha: 1\ntags:\n- a\n- b\nzeta: 2\n---\n# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "c"
+  ],
+  "output": "---\nalpha: 1\ntags:\n- c\nzeta: 2\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "remove between keys",
+  "input": "---\nalpha: 1\ntags:\n- a\nzeta: 2\n---\n# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [],
+  "output": "---\nalpha: 1\nzeta: 2\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "nested values stay",
+  "input": "---\nmeta:\n  a:\n  - 1\n  - 2\n  b: x\ntags:\n- a\n---\n# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "b"
+  ],
+  "output": "---\nmeta:\n  a:\n  - 1\n  - 2\n  b: x\ntags:\n- b\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "dates stay",
+  "input": "---\ndate: 2026-11-05\n---\n# Title\n\nSome text\n\n- [ ] a task\n",
+  "tags": [
+   "t"
+  ],
+  "output": "---\ndate: 2026-11-05\ntags:\n- t\n---\n# Title\n\nSome text\n\n- [ ] a task\n"
+ },
+ {
+  "name": "empty body",
+  "input": "---\ntags:\n- a\n---\n",
+  "tags": [
+   "b"
+  ],
+  "output": "---\ntags:\n- b\n---\n"
+ },
+ {
+  "name": "empty file",
+  "input": "",
+  "tags": [
+   "a"
+  ],
+  "output": "---\ntags:\n- a\n---\n"
+ },
+ {
+  "name": "invalid yaml is body",
+  "input": "---\na: [b\n---\ntext\n",
+  "tags": [
+   "t"
+  ],
+  "output": "---\ntags:\n- t\n---\n---\na: [b\n---\ntext\n"
+ },
+ {
+  "name": "a rule is not frontmatter",
+  "input": "---\n\ntext\n",
+  "tags": [
+   "t"
+  ],
+  "output": "---\ntags:\n- t\n---\n---\n\ntext\n"
+ },
+ {
+  "name": "a list is not frontmatter",
+  "input": "---\n- a\n---\ntext\n",
+  "tags": [
+   "t"
+  ],
+  "output": "---\ntags:\n- t\n---\n---\n- a\n---\ntext\n"
+ }
+]

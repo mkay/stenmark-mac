@@ -1,0 +1,58 @@
+# Generate Stenmark.xcodeproj with `xcodegen generate`. The project file is not
+# checked in; this is the source of truth.
+name: Stenmark
+options:
+  bundleIdPrefix: de.singular
+  deploymentTarget:
+    macOS: "15.0"
+  createIntermediateGroups: true
+  developmentLanguage: en
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+packages:
+  StenmarkCore:
+    path: Packages/StenmarkCore
+  StenmarkWeb:
+    path: Packages/StenmarkWeb
+targets:
+  Stenmark:
+    type: application
+    platform: macOS
+    sources: [App]
+    dependencies:
+      - package: StenmarkCore
+      - package: StenmarkWeb
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: Stenmark
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSApplicationCategoryType: public.app-category.productivity
+        NSHumanReadableCopyright: "© 2026 Kreuder. GPL-3.0-only."
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: de.singular.stenmark
+        PRODUCT_NAME: Stenmark
+        # Not sandboxed: notes can be anywhere, and a sandboxed app would need a
+        # bookmark for every folder. Same choice as Edith.
+        ENABLE_APP_SANDBOX: NO
+        ENABLE_HARDENED_RUNTIME: YES
+        # Apple Development for all builds, as with Edith. There's no Developer
+        # ID, so releases aren't notarised.
+        CODE_SIGN_STYLE: Automatic
+        CODE_SIGN_IDENTITY: Apple Development
+        DEVELOPMENT_TEAM: Z7MGLA2YTJ
+        GENERATE_INFOPLIST_FILE: NO
+schemes:
+  Stenmark:
+    build:
+      targets:
+        Stenmark: all
+    test:
+      targets:
+        - package: StenmarkCore/StenmarkCoreTests
+        - package: StenmarkWeb/StenmarkWebTests

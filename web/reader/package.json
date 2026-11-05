@@ -1,0 +1,16 @@
+{
+  "name": "stenmark-reader",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "esbuild src/reader.js --bundle --minify --format=iife --outfile=../../Packages/StenmarkWeb/Sources/StenmarkWeb/Resources/Reader/reader.bundle.js"
+  },
+  "dependencies": {
+    "highlight.js": "11.11.1",
+    "markdown-it": "14.1.0",
+    "markdown-it-attrs": "4.3.1"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0"
+  }
+}
