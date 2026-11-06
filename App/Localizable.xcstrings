@@ -1957,6 +1957,22 @@
         }
       }
     },
+    "Mixes the accent colour from System Settings ▸ Appearance into the sidebar and document list.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mischt die Akzentfarbe aus Systemeinstellungen ▸ Erscheinungsbild in die Seitenleiste und die Dokumentliste."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Подмешивает акцентный цвет из «Системные настройки ▸ Оформление» в боковую панель и список документов."
+          }
+        }
+      }
+    },
     "New Note…": {
       "localizations": {
         "de": {
@@ -2954,6 +2970,22 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "Эта заметка изменилась на диске. При сохранении будет предложено выбрать версию."
+          }
+        }
+      }
+    },
+    "Tint the lists": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listen einfärben"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Подкрашивать списки"
           }
         }
       }

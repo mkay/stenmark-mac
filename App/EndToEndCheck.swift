@@ -365,6 +365,17 @@ import WebKit
         check("and returns to it", await waitFor { !window.isEditing && !window.showsNoteOnly && window.columnLayout == .documents })
         window.setLayout(.all)
 
+        // The tint, which Settings turns off and on through the same two calls.
+        check("the lists are tinted by default", window.listBackground != .clear)
+        try? window.app.settings.set(Settings.tintSidebar, to: false)
+        window.app.styleChanged()
+        check("the tint can be turned off", window.listBackground == .clear)
+        try? window.app.settings.set(Settings.tintSidebar, to: true)
+        window.app.styleChanged()
+        // A style change reloads the open note on the next update, which would
+        // cancel a note opened in the same moment.
+        try? await Task.sleep(for: .milliseconds(500))
+
         // The Trash. One note with a name of its own, cleaned up by the script.
         let doomed = root.appending(path: "stenmark-e2e-trash.md")
         try? Data("x".utf8).write(to: doomed)

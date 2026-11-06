@@ -4,6 +4,7 @@
 import AppKit
 import StenmarkCore
 import StenmarkWeb
+import SwiftUI
 
 /// What the middle column shows.
 enum ListMode {
@@ -68,6 +69,14 @@ extension WindowModel {
     /// Search and tags live in the document column, so they need it on screen.
     private func revealDocumentColumn() {
         if showsNoteOnly { setLayout(lastListLayout) }
+    }
+
+    // MARK: Tint
+
+    /// A faint accent tint behind the lists, as in the Linux app and Edith.
+    var listBackground: Color {
+        _ = app.styleRevision
+        return app.settings.value(Settings.tintSidebar) ? Color.accentColor.opacity(0.06) : .clear
     }
 
     // MARK: Arranging lists

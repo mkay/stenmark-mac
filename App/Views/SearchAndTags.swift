@@ -34,7 +34,7 @@ struct SearchPanel: View {
                 .tag(hit.file)
             }
             .scrollContentBackground(.hidden)
-            .background(Color.accentColor.opacity(0.06))
+            .background(window.listBackground)
             .overlay {
                 if !window.searchQuery.isEmpty, window.searchHits.isEmpty, !window.isSearching {
                     ContentUnavailableView("No Results", systemImage: "magnifyingglass")
@@ -92,7 +92,7 @@ struct TagPanel: View {
                 NoteRow(window: window, note: note).tag(note.url)
             }
             .scrollContentBackground(.hidden)
-            .background(Color.accentColor.opacity(0.06))
+            .background(window.listBackground)
             .overlay {
                 if window.selectedTags.isEmpty {
                     ContentUnavailableView("Select Tags", systemImage: "tag")

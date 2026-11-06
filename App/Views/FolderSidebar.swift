@@ -43,9 +43,8 @@ struct FolderSidebar: View {
             Button("New Note…") { window.requestNewNote() }
             Button("New Folder…") { window.requestNewFolder() }
         }
-        // A faint accent tint, as in the Linux app and Edith.
         .scrollContentBackground(.hidden)
-        .background(Color.accentColor.opacity(0.06))
+        .background(window.listBackground)
         .safeAreaInset(edge: .top) {
             RootSelector(choices: window.rootChoices, current: window.root) { window.switchRoot(to: $0) }
                 .help("Change root folder")

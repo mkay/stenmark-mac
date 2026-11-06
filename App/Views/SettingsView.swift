@@ -98,6 +98,10 @@ private struct GeneralSettings: View {
                 Picker("Viewer theme", selection: binding(Settings.viewerTheme, in: app, failure: $failure)) {
                     ForEach(viewerThemes, id: \.0) { Text($0.1).tag($0.0) }
                 }
+                Toggle(isOn: binding(Settings.tintSidebar, in: app, failure: $failure)) {
+                    Text("Tint the lists")
+                    Text("Mixes the accent colour from System Settings ▸ Appearance into the sidebar and document list.")
+                }
             }
             if let failure {
                 Text(verbatim: failure).foregroundStyle(.red)

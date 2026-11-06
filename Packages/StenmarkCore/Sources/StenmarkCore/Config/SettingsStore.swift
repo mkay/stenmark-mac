@@ -37,6 +37,7 @@ public enum Settings {
     // On by default here, unlike Linux.
     public static let rememberLastFolder = Setting("remember_last_folder", true)
     public static let showSidebarTags = Setting("show_sidebar_tags", false)
+    public static let tintSidebar = Setting("tint_sidebar", true)
     public static let previewEnabled = Setting("preview_enabled", false)
     public static let lastRootFolder = Setting("last_root_folder", "")
     public static let whatsNewSeen = Setting("whats_new_seen", "")

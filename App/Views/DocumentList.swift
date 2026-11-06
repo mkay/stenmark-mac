@@ -49,9 +49,8 @@ struct DocumentList: View {
                 .padding(.horizontal, 10)
                 .padding(.vertical, 6)
         }
-        // A faint accent tint, as in the Linux app and Edith.
         .scrollContentBackground(.hidden)
-        .background(Color.accentColor.opacity(0.06))
+        .background(window.listBackground)
         .overlay {
             if window.documents.allSatisfy({ window.arranged($0.notes).isEmpty && window.arranged($0.subfolders).isEmpty }) {
                 ContentUnavailableView("No Documents", systemImage: "doc.text")
