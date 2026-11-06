@@ -72,7 +72,8 @@ struct ReaderPane: View {
                 // window sit over the document list, not this pane. Next to Edit
                 // so that Preview appearing doesn't move it.
                 Toggle(isOn: Binding(get: { window.showsNoteOnly }, set: { _ in window.toggleNoteOnly() })) {
-                    Label("Note Only", systemImage: "chevron.left.chevron.right")
+                    // Points the way the pane's edge will move on the next click.
+                    Label("Note Only", systemImage: window.showsNoteOnly ? "arrow.right.to.line.compact" : "arrow.left.to.line.compact")
                 }
                 .help("Note Only")
                 Toggle(isOn: Binding(get: { window.isEditing }, set: { _ in window.toggleEdit() })) {
