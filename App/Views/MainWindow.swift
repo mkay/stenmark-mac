@@ -35,19 +35,23 @@ private struct WindowContent: View {
             } else {
                 NavigationSplitView(columnVisibility: columnVisibility) {
                     FolderSidebar(window: window)
-                        // One button steps through the layouts, in ReaderPane.
-                        // A second sidebar icon beside it looks like a mistake.
-                        .toolbar(removing: .sidebarToggle)
                         .navigationSplitViewColumnWidth(min: 170, ideal: 220)
                 } content: {
                     DocumentList(window: window)
-                        .navigationSplitViewColumnWidth(min: 220, ideal: 300)
+                        .navigationSplitViewColumnWidth(min: 240, ideal: 300)
+                        // Items of its own are what give the toolbar a separator
+                        // at this column's edge, so that it splits in two there.
+                        .toolbar {
+                            ToolbarItemGroup(placement: .navigation) { HistoryButtons(window: window) }
+                        }
                 } detail: {
                     ReaderPane(window: window)
                 }
             }
         }
-        .navigationTitle(window.openNote?.deletingPathExtension().lastPathComponent ?? "Stenmark")
+        .navigationTitle(window.openNote?.lastPathComponent ?? "Stenmark")
+        // Still the window's name for the Window menu, but ReaderPane draws it.
+        .toolbar(removing: window.root == nil ? nil : .title)
         .focusedSceneValue(\.windowModel, window)
         .modifier(WindowPrompts(window: window))
         .modifier(DebugHooksModifier(window: window))

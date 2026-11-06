@@ -9,6 +9,7 @@ import WebKit
 struct ReaderPane: View {
     @Bindable var window: WindowModel
     @State private var isTagsVisible = false
+    @State private var paneWidth: CGFloat = 600
 
     var body: some View {
         VStack(spacing: 0) {
@@ -48,14 +49,17 @@ struct ReaderPane: View {
                 .padding(.vertical, 4)
             }
         }
+        .onGeometryChange(for: CGFloat.self, of: \.size.width) { paneWidth = $0 }
         .toolbar {
-            ToolbarItemGroup(placement: .navigation) {
-                Button("Change Layout", systemImage: "sidebar.left") { window.cycleLayout() }
-                    .help("Change Layout")
-                Button("Back", systemImage: "chevron.left") { window.goBack() }
-                    .disabled(!window.canGoBack)
-                Button("Forward", systemImage: "chevron.right") { window.goForward() }
-                    .disabled(!window.canGoForward)
+            if window.showsNoteOnly {
+                ToolbarItemGroup(placement: .navigation) { HistoryButtons(window: window) }
+            }
+            if #available(macOS 26.0, *) {
+                ToolbarItem(placement: .primaryAction) { paneTitle }
+                    .sharedBackgroundVisibility(.hidden)
+                ToolbarSpacer(.flexible, placement: .primaryAction)
+            } else {
+                ToolbarItem(placement: .primaryAction) { paneTitle }
             }
             ToolbarItemGroup(placement: .primaryAction) {
                 if window.isEditing {
@@ -64,6 +68,13 @@ struct ReaderPane: View {
                     }
                     .help("Toggle live preview")
                 }
+                // On the trailing side because the leading items of a three-column
+                // window sit over the document list, not this pane. Next to Edit
+                // so that Preview appearing doesn't move it.
+                Toggle(isOn: Binding(get: { window.showsNoteOnly }, set: { _ in window.toggleNoteOnly() })) {
+                    Label("Note Only", systemImage: "chevron.left.chevron.right")
+                }
+                .help("Note Only")
                 Toggle(isOn: Binding(get: { window.isEditing }, set: { _ in window.toggleEdit() })) {
                     Label("Edit", systemImage: "pencil")
                 }
@@ -97,6 +108,33 @@ struct ReaderPane: View {
                     }
             }
         }
+    }
+}
+
+private extension ReaderPane {
+    /// The window's title, drawn by hand so that it starts at this pane's edge.
+    /// The system's stays over the document list and runs across the divider.
+    var paneTitle: some View {
+        Text(verbatim: window.openNote?.lastPathComponent ?? "Stenmark")
+            .font(.headline)
+            .lineLimit(1)
+            .truncationMode(.middle)
+            // The toolbar sizes an item by its text and won't squeeze it, so a
+            // long name has to leave the buttons their room here.
+            .frame(maxWidth: max(paneWidth - (window.showsNoteOnly ? 490 : 320), 60), alignment: .leading)
+            .padding(.horizontal, 8)
+    }
+}
+
+/// Back and forward through the notes read.
+struct HistoryButtons: View {
+    let window: WindowModel
+
+    var body: some View {
+        Button("Back", systemImage: "chevron.left") { window.goBack() }
+            .disabled(!window.canGoBack)
+        Button("Forward", systemImage: "chevron.right") { window.goForward() }
+            .disabled(!window.canGoForward)
     }
 }
 

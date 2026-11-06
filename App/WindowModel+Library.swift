@@ -58,14 +58,11 @@ extension WindowModel {
         try? app.settings.set(Settings.columnLayout, to: layout.rawValue)
     }
 
-    /// The toolbar button: everything, then the documents and note, then the
-    /// note alone, and round again.
-    func cycleLayout() {
-        if showsNoteOnly {
-            setLayout(.all)
-        } else {
-            setLayout(columnLayout == .all ? .documents : .note)
-        }
+    /// The note pane's button. A split view can't show the sidebar without the
+    /// document column, so hiding the documents takes the sidebar with them,
+    /// and bringing them back returns the sidebar to how it was.
+    func toggleNoteOnly() {
+        setLayout(showsNoteOnly ? lastListLayout : .note)
     }
 
     /// Search and tags live in the document column, so they need it on screen.

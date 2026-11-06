@@ -607,22 +607,6 @@
         }
       }
     },
-    "Change Layout": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ansicht wechseln"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "Сменить вид"
-          }
-        }
-      }
-    },
     "Change root folder": {
       "localizations": {
         "de": {

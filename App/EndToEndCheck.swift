@@ -329,12 +329,25 @@ import WebKit
         check("wider than with the documents (\(Int(documentsWidth)) to \(Int(fullWidth)))", fullWidth > documentsWidth + 50)
         check("the layout is saved", window.app.settings.value(Settings.columnLayout) == "note")
         check("the note is still on the page", await web.value("document.querySelector('h1').textContent") == "Welcome to the Demo")
-        window.cycleLayout()
-        check("the button goes from the note to all columns", await waitFor { window.columnLayout == .all })
-        window.cycleLayout()
-        check("then to the documents and note", await waitFor { window.columnLayout == .documents })
-        window.cycleLayout()
-        check("then to the note alone", await waitFor { window.columnLayout == .note })
+        window.toggleNoteOnly()
+        check("the note's button brings back the layout it left", await waitFor { window.columnLayout == .documents })
+        window.toggleNoteOnly()
+        check("and returns to the note alone", await waitFor { window.columnLayout == .note })
+        window.setLayout(.all)
+        _ = await waitFor { !window.showsNoteOnly }
+        try? await Task.sleep(for: .milliseconds(700))
+        let sidebarButton = page.window?.toolbar?.items.first { $0.itemIdentifier.rawValue.lowercased().contains("sidebar") }
+        check("the sidebar has its own button", sidebarButton != nil)
+        await mouseClick(sidebarButton?.view)
+        check("which hides only the sidebar", await waitFor { window.columnLayout == .documents })
+        try? await Task.sleep(for: .milliseconds(700))
+        await mouseClick(sidebarButton?.view)
+        check("and shows it again", await waitFor { window.columnLayout == .all })
+        try? await Task.sleep(for: .milliseconds(700))
+        window.toggleNoteOnly()
+        check("all columns go to the note alone", await waitFor { window.columnLayout == .note })
+        window.toggleNoteOnly()
+        check("and come back with the sidebar", await waitFor { window.columnLayout == .all })
         window.setLayout(.documents)
         _ = await waitFor { !window.showsNoteOnly }
         window.setLayout(.note)
@@ -399,6 +412,21 @@ import WebKit
         }
         target?.performClick(nil)
         _ = await waitFor { NSApp.windows.allSatisfy { $0.attachedSheet == nil } }
+    }
+
+    /// A real click in the middle of a view. SwiftUI's toolbar items have no
+    /// action to send, so this is the only way to press one.
+    private func mouseClick(_ view: NSView?) async {
+        guard let view, let target = view.window else { return }
+        let point = view.convert(NSPoint(x: view.bounds.midX, y: view.bounds.midY), to: nil)
+        for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
+            guard let event = NSEvent.mouseEvent(
+                with: type, location: point, modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime,
+                windowNumber: target.windowNumber, context: nil, eventNumber: 0, clickCount: 1, pressure: 1
+            ) else { continue }
+            NSApp.sendEvent(event)
+            try? await Task.sleep(for: .milliseconds(50))
+        }
     }
 
     /// A real key press through NSApp, so that it meets the menu bar first.
