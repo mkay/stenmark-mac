@@ -2053,6 +2053,22 @@
         }
       }
     },
+    "No Notes Yet": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Noch keine Notizen"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Заметок пока нет"
+          }
+        }
+      }
+    },
     "No Results": {
       "localizations": {
         "de": {

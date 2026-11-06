@@ -40,6 +40,8 @@ final class WindowModel {
     /// What the selector offers: `ceiling` and the folders below it.
     private(set) var rootChoices: [FolderNode] = []
     private(set) var overview = LibraryOverview()
+    /// Which folder `overview` describes, as it trails behind `root`.
+    private var overviewRoot: String?
     private(set) var documents: [NoteGroup] = []
     private(set) var selection: SidebarItem? = .all
     /// Subfolders opened from the document list, below the selected folder.
@@ -206,6 +208,12 @@ final class WindowModel {
         refreshLists()
     }
 
+    /// Whether the root is known to hold no notes at all. False until its
+    /// scan is in, so that a full folder never flashes up as an empty one.
+    var isLibraryEmpty: Bool {
+        overviewRoot == root?.path && overview.totalNotes == 0
+    }
+
     func select(_ item: SidebarItem?) {
         guard item != selection else { return }
         selection = item
@@ -245,6 +253,7 @@ final class WindowModel {
             }.value
             guard !Task.isCancelled else { return }
             self.overview = overview
+            self.overviewRoot = root.path
             self.documents = documents
             self.rootChoices = choices
         }

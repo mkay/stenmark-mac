@@ -381,7 +381,11 @@ import WebKit
         await click("OK")
         let empty = root.appending(path: "stenmark-e2e-empty")
         window.createFolder(named: "stenmark-e2e-empty", in: root)
-        _ = await waitFor { manager.fileExists(atPath: empty.path) }
+        _ = await waitFor { window.rootChoices.contains { $0.url.path == empty.path } }
+        window.switchRoot(to: empty)
+        check("a folder without notes says so", await waitFor { window.root?.path == empty.path && window.isLibraryEmpty })
+        window.switchRoot(to: root)
+        check("and one with notes doesn't", await waitFor { window.root?.path == root.path && !window.isLibraryEmpty })
         window.trash(empty, isFolder: true)
         check("an empty folder goes", await waitFor { !manager.fileExists(atPath: empty.path) })
     }

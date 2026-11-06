@@ -258,7 +258,7 @@ private struct WelcomeView: View {
 
     var body: some View {
         ContentUnavailableView {
-            Label("Welcome to Stenmark", systemImage: "books.vertical")
+            Label { Text("Welcome to Stenmark") } icon: { StenmarkLogo() }
         } description: {
             Text("Choose the folder that holds your Markdown notes.")
         } actions: {

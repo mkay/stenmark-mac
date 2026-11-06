@@ -25,7 +25,7 @@ struct ReaderPane: View {
                         if window.openNote == nil {
                             // Fills the pane, because the web view behind it is
                             // white until a note is loaded.
-                            ContentUnavailableView("Select a Note", systemImage: "doc.text")
+                            placeholder
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                                 .background(Color(nsColor: .windowBackgroundColor))
                         }
@@ -88,6 +88,13 @@ struct ReaderPane: View {
                     .disabled(window.openNote == nil || window.isEditing)
                     .help(window.isEditing ? "Finish editing to change tags" : "Tags")
                     .popover(isPresented: $isTagsVisible, arrowEdge: .bottom) { TagEditor(window: window) }
+                Button("Table of Contents", systemImage: "list.bullet.indent") { window.isContentsVisible.toggle() }
+                    .disabled(window.headings.isEmpty)
+                    .popover(isPresented: $window.isContentsVisible, arrowEdge: .bottom) {
+                        ContentsList(window: window)
+                    }
+            }
+            ToolbarItem(placement: .primaryAction) {
                 Menu("More", systemImage: "ellipsis") {
                     if let note = window.openNote {
                         OpenWithMenu(window: window, url: note)
@@ -100,18 +107,27 @@ struct ReaderPane: View {
                 }
                 .disabled(window.openNote == nil)
             }
-            ToolbarItem(placement: .primaryAction) {
-                Button("Table of Contents", systemImage: "list.bullet.indent") { window.isContentsVisible.toggle() }
-                    .disabled(window.headings.isEmpty)
-                    .popover(isPresented: $window.isContentsVisible, arrowEdge: .bottom) {
-                        ContentsList(window: window)
-                    }
-            }
         }
     }
 }
 
 private extension ReaderPane {
+    /// What the pane shows with no note open.
+    @ViewBuilder var placeholder: some View {
+        if window.isLibraryEmpty {
+            ContentUnavailableView {
+                Label { Text("No Notes Yet") } icon: { StenmarkLogo() }
+            } actions: {
+                Button("New Note…") { window.requestNewNote() }
+                    .buttonStyle(.borderedProminent)
+            }
+        } else {
+            ContentUnavailableView {
+                Label { Text("Select a Note") } icon: { StenmarkLogo() }
+            }
+        }
+    }
+
     /// The window's title, drawn by hand so that it starts at this pane's edge.
     /// The system's stays over the document list and runs across the divider.
     var paneTitle: some View {
@@ -123,6 +139,17 @@ private extension ReaderPane {
             // long name has to leave the buttons their room here.
             .frame(maxWidth: max(paneWidth - (window.showsNoteOnly ? 490 : 320), 60), alignment: .leading)
             .padding(.horizontal, 8)
+    }
+}
+
+/// The logo in grey, for the panes with nothing in them yet.
+struct StenmarkLogo: View {
+    var body: some View {
+        Image("Logo")
+            .resizable()
+            .scaledToFit()
+            .frame(width: 64, height: 64)
+            .accessibilityHidden(true)
     }
 }
 
