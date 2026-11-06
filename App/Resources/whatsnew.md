@@ -5,6 +5,8 @@ line outside this comment is one bullet; a leading "-", "*" or "•" is stripped
 Links can be written as [label](https://…).
 -->
 
-- The first release of Stenmark for macOS, a native app rebuilt from Stenmark for Linux.
-- Read, edit, tag, search and organise a folder of Markdown notes, with a live preview and 48 editor themes.
-- Made to share a synced folder with the Linux app: notes are written exactly as Linux writes them, and a change from another machine is never overwritten without asking.
+- The sidebar and the document list now have separate controls: the button at the top of the sidebar toggles the sidebar alone, and a new button beside Edit gives the note the window's full width.
+- The title bar now splits at the document list, and shows the note's full file name.
+- A folder with no notes offers New Note instead of asking you to select one, and the empty screens show the Stenmark logo.
+- New setting, Tint the lists: the faint accent colour behind the lists can now be turned off.
+- Help ▸ Open Source Licences lists the third-party software in the app.
