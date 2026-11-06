@@ -2213,6 +2213,22 @@
         }
       }
     },
+    "Open Source Licences": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open-Source-Lizenzen"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Лицензии открытого ПО"
+          }
+        }
+      }
+    },
     "Open With": {
       "localizations": {
         "de": {

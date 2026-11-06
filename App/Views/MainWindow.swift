@@ -72,6 +72,7 @@ private struct WindowPrompts: ViewModifier {
         .onChange(of: app.styleRevision) { window.reloadOpenNote() }
         .sheet(isPresented: $window.showWhatsNew) { WhatsNewView() }
         .sheet(isPresented: $window.showSupport) { SupportView() }
+        .sheet(isPresented: $window.showLicences) { LicencesView() }
         .task {
             if app.shouldShowWhatsNew(version: WhatsNewView.version) { window.showWhatsNew = true }
         }

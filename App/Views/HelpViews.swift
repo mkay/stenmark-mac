@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Kreuder <mk@singular.de>
 // SPDX-License-Identifier: GPL-3.0-only
 
+import AppKit
 import SwiftUI
 
 /// Shown once after an update, and from the Help menu. The notes are in English
@@ -45,6 +46,67 @@ struct WhatsNewView: View {
         .padding(24)
         .frame(width: 460)
     }
+}
+
+/// Help ▸ Open Source Licences. The licences are in English only, because
+/// they're legal text, and the file comes from `scripts/make-notices.py`.
+struct LicencesView: View {
+    @Environment(\.dismiss) private var dismiss
+
+    static var text: String {
+        guard let url = Bundle.main.url(forResource: "ThirdPartyNotices", withExtension: "txt") else { return "" }
+        return (try? String(contentsOf: url, encoding: .utf8)) ?? ""
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Open Source Licences").font(.title2.weight(.semibold))
+            PlainTextView(text: Self.text) { dismiss() }
+                .clipShape(.rect(cornerRadius: 6))
+            HStack {
+                Spacer()
+                Button("Close") { dismiss() }.keyboardShortcut(.defaultAction)
+            }
+        }
+        .padding(24)
+        .frame(width: 640, height: 560)
+    }
+}
+
+/// Read-only text that can be selected. An NSTextView, because a SwiftUI `Text`
+/// lays out all of it at once, and this is hundreds of lines.
+private struct PlainTextView: NSViewRepresentable {
+    let text: String
+    let onClose: () -> Void
+
+    /// As first responder it would keep Return from the sheet's default button.
+    private final class TextView: NSTextView {
+        var onClose: () -> Void = {}
+
+        override func keyDown(with event: NSEvent) {
+            // Return, Enter and Escape.
+            if [36, 76, 53].contains(event.keyCode) { onClose() } else { super.keyDown(with: event) }
+        }
+    }
+
+    func makeNSView(context: Context) -> NSScrollView {
+        let view = TextView()
+        view.isEditable = false
+        view.onClose = onClose
+        view.font = .monospacedSystemFont(ofSize: 11, weight: .regular)
+        view.textColor = .labelColor
+        view.textContainerInset = NSSize(width: 8, height: 8)
+        view.string = text
+        view.isVerticallyResizable = true
+        view.autoresizingMask = .width
+        view.textContainer?.widthTracksTextView = true
+        let scrollView = NSScrollView()
+        scrollView.hasVerticalScroller = true
+        scrollView.documentView = view
+        return scrollView
+    }
+
+    func updateNSView(_ scrollView: NSScrollView, context: Context) {}
 }
 
 /// Help ▸ Support Stenmark: the Linux app's "Keep this app alive".

@@ -376,6 +376,30 @@ import WebKit
         // cancel a note opened in the same moment.
         try? await Task.sleep(for: .milliseconds(500))
 
+        // The licences, which MIT and BSD need to ship with the app.
+        check("the licences are bundled", ["@codemirror/view", "markdown-it", "highlight.js", "Yams", "libYAML", "Sparkle"].allSatisfy { LicencesView.text.contains($0) })
+        window.showLicences = true
+        check("and shown", await waitFor { NSApp.windows.contains { $0.sheetParent != nil } })
+        let sheet = { NSApp.windows.first { $0.sheetParent != nil } }
+        func focusSheet() async {
+            NSApp.activate(ignoringOtherApps: true)
+            sheet()?.makeKeyAndOrderFront(nil)
+            _ = await waitFor(2) { NSApp.isActive && NSApp.keyWindow?.sheetParent != nil }
+        }
+        await focusSheet()
+        check("the licences have text", (sheet()?.contentView.map { firstTextView(in: $0)?.string.count ?? 0 } ?? 0) > 1000)
+        await press(36)
+        check("Return closes them", await waitFor { !window.showLicences })
+        try? await Task.sleep(for: .milliseconds(500))
+        window.showLicences = true
+        _ = await waitFor { sheet() != nil }
+        try? await Task.sleep(for: .milliseconds(500))
+        await focusSheet()
+        // The sheet has 24 points of padding, and Close sits in its bottom corner.
+        if let width = sheet()?.frame.width { await mouseClick(at: NSPoint(x: width - 50, y: 34), in: sheet()) }
+        check("so does the Close button", await waitFor { !window.showLicences })
+        try? await Task.sleep(for: .milliseconds(500))
+
         // The Trash. One note with a name of its own, cleaned up by the script.
         let doomed = root.appending(path: "stenmark-e2e-trash.md")
         try? Data("x".utf8).write(to: doomed)
@@ -429,11 +453,19 @@ import WebKit
         _ = await waitFor { NSApp.windows.allSatisfy { $0.attachedSheet == nil } }
     }
 
+    private func firstTextView(in view: NSView) -> NSTextView? {
+        (view as? NSTextView) ?? view.subviews.lazy.compactMap(firstTextView(in:)).first
+    }
+
     /// A real click in the middle of a view. SwiftUI's toolbar items have no
     /// action to send, so this is the only way to press one.
     private func mouseClick(_ view: NSView?) async {
-        guard let view, let target = view.window else { return }
-        let point = view.convert(NSPoint(x: view.bounds.midX, y: view.bounds.midY), to: nil)
+        guard let view else { return }
+        await mouseClick(at: view.convert(NSPoint(x: view.bounds.midX, y: view.bounds.midY), to: nil), in: view.window)
+    }
+
+    private func mouseClick(at point: NSPoint, in target: NSWindow?) async {
+        guard let target else { return }
         for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
             guard let event = NSEvent.mouseEvent(
                 with: type, location: point, modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime,

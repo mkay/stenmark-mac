@@ -99,6 +99,7 @@ final class WindowModel {
     var isContentsVisible = false
     var showWhatsNew = false
     var showSupport = false
+    var showLicences = false
     var message: Message?
 
     /// The version of the open note on the page, to tell a real change from the

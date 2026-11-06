@@ -38,6 +38,8 @@ xcodebuild -project Stenmark.xcodeproj -scheme Stenmark -configuration Release \
     -derivedDataPath build/Release MARKETING_VERSION="$VERSION" CURRENT_PROJECT_VERSION="$BUILD" \
     build >/dev/null
 APP="build/Release/Build/Products/Release/Stenmark.app"
+# The licences have to match what was just built.
+scripts/make-notices.py --check
 codesign --verify --deep --strict "$APP"
 codesign -dvv "$APP" 2>&1 | grep -E "^Authority=Apple Development" >/dev/null || {
     echo "Not signed with an Apple Development certificate; macOS would ask for folder access again after every update." >&2

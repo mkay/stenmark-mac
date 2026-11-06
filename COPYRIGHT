@@ -28,15 +28,7 @@ See <https://creativecommons.org/licenses/by/4.0/>:
 
 THIRD-PARTY
 
-Not covered by the grant above. All are GPL-compatible:
-
-  Packages/StenmarkWeb/Sources/StenmarkWeb/Resources/Editor/dist/*
-  CodeMirror 6 — MIT — <https://codemirror.net/>
-
-  Packages/StenmarkWeb/Sources/StenmarkWeb/Resources/Reader/*
-  markdown-it — MIT — <https://github.com/markdown-it/markdown-it>
-  markdown-it-attrs — MIT — <https://github.com/arve0/markdown-it-attrs>
-  highlight.js — BSD-3-Clause — <https://highlightjs.org/>
-
-  Yams — MIT — <https://github.com/jpsim/Yams>
-  Sparkle — MIT — <https://sparkle-project.org/>
+Not covered by the grant above. All are GPL-compatible. The bundled web code in
+Packages/StenmarkWeb/Sources/StenmarkWeb/Resources/, Yams and Sparkle are listed
+with their licences in App/Resources/ThirdPartyNotices.txt, which the app shows
+under Help > Open Source Licences. scripts/make-notices.py writes that file.

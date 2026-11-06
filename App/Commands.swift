@@ -74,6 +74,8 @@ struct StenmarkCommands: Commands {
                 .disabled(window == nil)
             Button("Support Stenmark…") { window?.showSupport = true }
                 .disabled(window == nil)
+            Button("Open Source Licences") { window?.showLicences = true }
+                .disabled(window == nil)
         }
         CommandMenu("Note") {
             Button(window?.isEditing == true ? "Done Editing" : "Edit Note") { window?.toggleEdit() }
