@@ -5,6 +5,36 @@ import AppKit
 import Sparkle
 import SwiftUI
 
+/// Follows Sparkle, whose `canCheckForUpdates` changes during a check. SwiftUI
+/// can't see that property, so a menu reading it directly would keep the state
+/// it had when it was built. Always false in debug builds, which don't update.
+@MainActor
+final class UpdateState: ObservableObject {
+    @Published private(set) var canCheck = false
+    private let controller: SPUStandardUpdaterController
+
+    init(updater controller: SPUStandardUpdaterController) {
+        self.controller = controller
+        controller.updater.publisher(for: \.canCheckForUpdates)
+            .receive(on: DispatchQueue.main)
+            .assign(to: &$canCheck)
+    }
+
+    func check() {
+        controller.checkForUpdates(nil)
+    }
+}
+
+/// The menu item, in a view of its own so that it can observe `UpdateState`.
+struct CheckForUpdatesItem: View {
+    @ObservedObject var state: UpdateState
+
+    var body: some View {
+        Button("Check for Updates…") { state.check() }
+            .disabled(!state.canCheck)
+    }
+}
+
 /// Asks before quitting with unsaved edits.
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
@@ -21,6 +51,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     #else
     let updater = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
     #endif
+
+    private(set) lazy var updateState = UpdateState(updater: updater)
 
     /// What arrived before the app's model was handed over.
     private var waiting: [URL] = []

@@ -20,8 +20,7 @@ struct StenmarkApp: App {
             SidebarCommands()
             StenmarkCommands()
             CommandGroup(after: .appInfo) {
-                Button("Check for Updates…") { delegate.updater.checkForUpdates(nil) }
-                    .disabled(!delegate.updater.updater.canCheckForUpdates)
+                CheckForUpdatesItem(state: delegate.updateState)
             }
         }
 
