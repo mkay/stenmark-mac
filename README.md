@@ -1,8 +1,11 @@
 # Stenmark for macOS
 
-Your markdown librarian: a native macOS Markdown reader, organiser and editor, rebuilt
-in Swift and SwiftUI from [Stenmark for Linux](https://github.com/mkay/stenmark). The
-editor is CodeMirror 6, hosted in a `WKWebView`.
+Your markdown librarian: a native Mac app for reading, organising and editing a folder of
+Markdown notes. Browse them, search them, tag and pin them, and double-click any word to
+edit right where you were reading.
+
+It is the Mac version of [Stenmark for Linux](https://github.com/mkay/stenmark), and the
+two can share one synced notes folder.
 
 **[Download the latest release](https://github.com/mkay/stenmark-mac/releases/latest)**
 
