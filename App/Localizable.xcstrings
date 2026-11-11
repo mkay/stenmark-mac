@@ -489,8 +489,8 @@
         },
         "ru": {
           "stringUnit": {
-            "state": "needs_review",
-            "value": "Применится при перезапуске Stenmark."
+            "state": "translated",
+            "value": "Применяется после перезапуска Stenmark."
           }
         }
       }
@@ -1417,8 +1417,8 @@
         },
         "ru": {
           "stringUnit": {
-            "state": "needs_review",
-            "value": "Шрифт"
+            "state": "translated",
+            "value": "Семейство шрифтов"
           }
         }
       }
@@ -2239,8 +2239,8 @@
         },
         "ru": {
           "stringUnit": {
-            "state": "needs_review",
-            "value": "Открыть в"
+            "state": "translated",
+            "value": "Открыть с помощью"
           }
         }
       }
@@ -2792,8 +2792,8 @@
         },
         "ru": {
           "stringUnit": {
-            "state": "needs_review",
-            "value": "Содержание"
+            "state": "translated",
+            "value": "Оглавление"
           }
         }
       }
@@ -3272,8 +3272,8 @@
         },
         "ru": {
           "stringUnit": {
-            "state": "needs_review",
-            "value": "«%@» будет перемещено в корзину."
+            "state": "translated",
+            "value": "«%@» будет перемещён в корзину."
           }
         }
       }
